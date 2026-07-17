@@ -1,0 +1,334 @@
+import { useState, useMemo } from 'react';
+import styled, { css } from 'styled-components';
+import { useGameStore, type Civilization } from '../hooks/useGameStore';
+import { useIsMobile } from '../hooks/useMediaQuery';
+import { useGameActions, calcCollectRate, calcAttackPower, calcShieldDefense, calcSpeed, calcRadarRange, calcAttackEnergyCost } from '../hooks/useGameActions';
+import { SYSTEMS, type SystemKey } from '../utils/constants';
+import { ResourceBar } from './ui/ResourceBar';
+import { StatCard } from './ui/StatCard';
+import { ActionButton } from './ui/ActionButton';
+import { TxConfirm } from './ui/TxConfirm';
+import { LoadingOverlay } from './Spinner';
+import { THEME } from '../theme';
+import { useI18n } from '../hooks/useI18n';
+
+/* ─── Layout ─── */
+
+const Container = styled.div<{ $mobile: boolean }>`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  ${({ $mobile }) => $mobile && css`padding: 4px 0;`}
+`;
+
+const Panel = styled.div`
+  background: ${THEME.card};
+  border: 1px solid ${THEME.border};
+  border-radius: 8px;
+  padding: 14px 16px;
+`;
+
+const Row = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+`;
+
+const Grid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px;
+`;
+
+const SectionTitle = styled.div`
+  color: ${THEME.text.secondary};
+  font-size: 0.72rem;
+  font-family: 'Courier New', monospace;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+`;
+
+const Name = styled.div`
+  color: ${THEME.accent.green};
+  font-size: 1.1rem;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  letter-spacing: 1px;
+`;
+const Sub = styled.div`
+  color: ${THEME.text.secondary};
+  font-size: 0.72rem;
+  font-family: 'Courier New', monospace;
+`;
+
+const StatPill = styled.div<{ $color: string }>`
+  background: ${({ $color }) => THEME.alpha($color, 0.08)};
+  border: 1px solid ${({ $color }) => THEME.alpha($color, 0.18)};
+  border-radius: 6px;
+  padding: 8px 14px;
+  min-height: 76px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 3px;
+`;
+
+const StatLabel = styled.div`
+  color: ${THEME.text.secondary};
+  font-size: 0.68rem;
+  font-family: 'Courier New', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+`;
+
+const StatValue = styled.div<{ $color: string }>`
+  color: ${({ $color }) => $color};
+  font-size: 1rem;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+`;
+
+const StatRate = styled.div`
+  color: ${THEME.text.secondary};
+  font-size: 0.65rem;
+  font-family: 'Courier New', monospace;
+`;
+
+const LoadOverlay = styled.div`
+  position: absolute; inset: 0; z-index: 1; border-radius: 8px; overflow: hidden;
+`;
+
+/* ─── Constants ─── */
+const ATTACK_COOLDOWN = 3000;
+
+export function HUD() {
+  const { t } = useI18n();
+  const civ = useGameStore(s => s.playerCiv);
+  const addr = useGameStore(s => s.address);
+  const dft = useGameStore(s => s.dftBalance);
+  const pending = useGameStore(s => s.pendingEnergy);
+  const tokens = useGameStore(s => s.attackTokens);
+  const target = useGameStore(s => s.selectedTarget);
+  const loading = useGameStore(s => s.loading);
+  const error = useGameStore(s => s.error);
+  const enemyCivs = useGameStore(s => s.enemyCivs);
+  const lastAttackTime = useGameStore(s => s.lastAttackTime);
+  const isMobile = useIsMobile();
+
+  const { upgradeSystem, attackTarget, clearError, rebuildCivilization, repairCollector } = useGameActions();
+
+  const now = Date.now();
+  const attackEnergyCost = civ ? calcAttackEnergyCost(civ.weaponLv) : 0;
+  const canAttack = target && civ && civ.energy >= attackEnergyCost && (now - lastAttackTime >= ATTACK_COOLDOWN) && !loading;
+  const cooldownRemaining = Math.max(0, Math.ceil((ATTACK_COOLDOWN - (now - lastAttackTime)) / 1000));
+  const targetName = target && enemyCivs.get(target)?.name;
+
+  const [confirmAction, setConfirmAction] = useState<{ type: 'upgrade' | 'attack'; system?: SystemKey } | null>(null);
+
+  if (!civ) return null;
+
+  const shortAddr = addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '';
+  const rate = calcCollectRate(civ.energyCollectorLv);
+  const atk = calcAttackPower(civ.weaponLv);
+  const defVal = calcShieldDefense(civ.shieldLv);
+  const dftNum = parseFloat(dft);
+  const isDestroyed = useGameStore(s => s.isDestroyed);
+  const collectorDur = useGameStore(s => s.collectorDurability);
+  const combatBoost = useGameStore(s => s.combatBoost);
+
+  const handleConfirmUpgrade = () => {
+    if (confirmAction?.type === 'upgrade' && confirmAction.system) {
+      upgradeSystem(confirmAction.system);
+    }
+    setConfirmAction(null);
+  };
+  const handleConfirmAttack = () => {
+    attackTarget();
+    setConfirmAction(null);
+  };
+
+  const systems = useMemo(() => [
+    { key: 'energyCollector' as SystemKey, icon: SYSTEMS.energyCollector.icon, title: SYSTEMS.energyCollector.name, lv: civ.energyCollectorLv, color: SYSTEMS.energyCollector.color,
+      bars: [
+        { label: t('hud.collect_rate'), value: rate, rate: rate + '/s', color: THEME.accent.green },
+        ...(collectorDur.max > 0 ? [{ label: t('hud.durability'), value: collectorDur.current, max: collectorDur.max, color: THEME.accent.blue }] : []),
+      ] },
+    { key: 'weapon' as SystemKey, icon: SYSTEMS.weapon.icon, title: SYSTEMS.weapon.name, lv: civ.weaponLv, color: SYSTEMS.weapon.color,
+      bars: [{ label: t('hud.attack_power'), value: atk, color: THEME.accent.red }] },
+    { key: 'shield' as SystemKey, icon: SYSTEMS.shield.icon, title: SYSTEMS.shield.name, lv: civ.shieldLv, color: SYSTEMS.shield.color,
+      bars: [
+        { label: t('hud.shield'), value: civ.shieldHP, max: civ.maxShieldHP, color: THEME.accent.shield },
+        { label: t('hud.defense'), value: defVal, color: SYSTEMS.shield.color },
+      ] },
+    { key: 'radar' as SystemKey, icon: SYSTEMS.radar.icon, title: SYSTEMS.radar.name, lv: civ.radarLv, color: SYSTEMS.radar.color,
+      bars: [{ label: t('hud.scan_range'), value: civ.scanRange, rate: civ.scanRange + ' ls', color: THEME.accent.blue }] },
+    { key: 'engine' as SystemKey, icon: SYSTEMS.engine.icon, title: SYSTEMS.engine.name, lv: civ.engineLv, color: SYSTEMS.engine.color,
+      bars: [{ label: t('hud.speed'), value: calcSpeed(civ.engineLv), rate: calcSpeed(civ.engineLv) + ' ls/h', color: SYSTEMS.engine.color }],
+    },
+  ], [civ, rate, atk, defVal]);
+
+  return (
+    <Container $mobile={isMobile}>
+      {/* Error */}
+      {error && (
+        <div onClick={clearError} style={{
+          color: THEME.accent.red, fontSize: '0.78rem', fontFamily: "'Courier New', monospace",
+          padding: '6px 10px', background: THEME.alpha(THEME.accent.red, 0.1), borderRadius: 6,
+          cursor: 'pointer', textAlign: 'center', border: `1px solid ${THEME.alpha(THEME.accent.red, 0.2)}`,
+        }}>
+          {t('hud.error_dismiss', { msg: error })}
+        </div>
+      )}
+
+      {/* ── Panel 1: Identity + Key Stats ── */}
+      <Panel>
+        <Row style={{ marginBottom: 10 }}>
+          <div style={{ flex: 1 }}>
+            <Name>{civ.name}</Name>
+            <Sub>{shortAddr}</Sub>
+          </div>
+          {target && (
+            <ActionButton variant="danger" disabled={!canAttack}
+              onClick={() => setConfirmAction({ type: 'attack' })} icon="⚔️"
+            >
+              {targetName ? `${targetName} ${canAttack ? t('hud.in_range') : t('hud.out_of_range')}` : (canAttack ? t('hud.in_range') : t('hud.out_of_range'))}
+              {cooldownRemaining > 0 ? ` (${cooldownRemaining}s)` : ` (${attackEnergyCost}⚡)`}
+            </ActionButton>
+          )}
+        </Row>
+        <Row>
+          <StatPill $color={THEME.accent.gold}>
+            <StatLabel>{t('hud.dft')}</StatLabel>
+            <StatValue $color={THEME.accent.gold}>{dftNum > 1e9 ? (dftNum / 1e9).toFixed(2) + 'B' : dftNum.toFixed(1)}</StatValue>
+          </StatPill>
+          <StatPill $color={THEME.accent.green}>
+            <StatLabel>{t('general.energy')}</StatLabel>
+            <StatValue $color={THEME.accent.green}>{civ.energy.toLocaleString()}</StatValue>
+            <StatRate>{rate}/s</StatRate>
+          </StatPill>
+          <StatPill $color={THEME.accent.red}>
+            <StatLabel>{t('general.health')}</StatLabel>
+            <StatValue $color={THEME.accent.red}>{civ.health.toLocaleString()}</StatValue>
+          </StatPill>
+          <StatPill $color={THEME.accent.shield}>
+            <StatLabel>{t('hud.shield')}</StatLabel>
+            <StatValue $color={THEME.accent.shield}>
+              {civ.maxShieldHP > 0 ? Math.round((civ.shieldHP / civ.maxShieldHP) * 100) + '%' : '0%'}
+            </StatValue>
+          </StatPill>
+          <StatPill $color="#8844ff">
+            <StatLabel>{t('hud.attack_token_label')}</StatLabel>
+            <StatValue $color="#8844ff">
+              {tokens.current.toFixed(1)}/{tokens.max}
+            </StatValue>
+            <StatRate>{tokens.ratePerSec.toFixed(4).replace(/\.?0+$/, '')}/s</StatRate>
+          </StatPill>
+          {combatBoost > 0 && (
+            <StatPill $color={THEME.accent.gold}>
+              <StatLabel>{t('hud.combat_boost')}</StatLabel>
+              <StatValue $color={THEME.accent.gold}>+{combatBoost}%</StatValue>
+              <StatRate>{t('hud.totem_bonus')}</StatRate>
+            </StatPill>
+          )}
+          {pending > 0 && (
+            <StatPill $color={THEME.accent.gold}>
+              <StatLabel>{t('hud.pending_label')}</StatLabel>
+              <StatValue $color={THEME.accent.gold}>{pending.toLocaleString()}</StatValue>
+              <StatRate>{t('hud.pending_type')}</StatRate>
+            </StatPill>
+          )}
+        </Row>
+      </Panel>
+
+      {/* ── Rebuild Banner ── */}
+      {isDestroyed && (
+        <Panel>
+          <div style={{ textAlign: 'center', padding: '16px 8px' }}>
+            <SectionTitle style={{ color: THEME.accent.red, marginBottom: 8 }}>{t('hud.destroyed_title')}</SectionTitle>
+            <div style={{ color: THEME.text.secondary, fontSize: '0.78rem', marginBottom: 12, fontFamily: "'Courier New', monospace" }}>
+              {t('hud.destroyed_desc')}
+            </div>
+            <ActionButton variant="danger" disabled={loading} onClick={() => !loading && rebuildCivilization()}>
+              {t('hud.destroyed_btn')}
+            </ActionButton>
+          </div>
+        </Panel>
+      )}
+
+      {/* ── Collector Durability Warning ── */}
+      {!isDestroyed && collectorDur.max > 0 && collectorDur.current < collectorDur.max * 0.3 && (
+        <Panel style={{ borderColor: THEME.alpha(THEME.accent.gold, 0.3) }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <span style={{ color: THEME.accent.gold, fontSize: '0.78rem', fontFamily: "'Courier New', monospace" }}>
+              {t('hud.durability_warn', { pct: Math.round(collectorDur.current / collectorDur.max * 100) })}
+            </span>
+            <ActionButton variant="ghost" disabled={loading} onClick={() => !loading && repairCollector(collectorDur.max)}>
+              {t('hud.durability_repair')}
+            </ActionButton>
+          </div>
+        </Panel>
+      )}
+
+      {/* ── Panel 2: 五大系统 ── */}
+      <Panel style={{ position: 'relative' }}>
+        <SectionTitle>{t('hud.tech_systems')}</SectionTitle>
+        {loading && <LoadOverlay><LoadingOverlay message={t('hud.loading_upgrade')} color={THEME.accent.green} transparent /></LoadOverlay>}
+        <Grid>
+          {systems.map(s => {
+            return (
+              <StatCard
+                key={s.key} icon={s.icon} title={s.title} level={s.lv}
+                bars={s.bars} warn={false}
+                actions={
+                  <ActionButton variant="primary" disabled={loading}
+                    onClick={() => setConfirmAction({ type: 'upgrade', system: s.key })} icon="⬆️"
+                  >
+                    {t('upgrade.btn')}
+                  </ActionButton>
+                }
+              />
+            );
+          })}
+        </Grid>
+      </Panel>
+
+      {/* ── TxConfirm ── */}
+      <TxConfirm
+        open={!!confirmAction}
+        title={confirmAction?.type === 'attack'
+          ? `${t('hud.confirm_attack')}${targetName ? ` ${targetName}` : ''}`
+          : `${confirmAction?.system ? `${SYSTEMS[confirmAction.system].icon} ${t('hud.confirm_upgrade')} ${SYSTEMS[confirmAction.system].name}` : ''}`}
+        icon={confirmAction?.type === 'attack' ? '⚔️' : '⬆️'}
+        onConfirm={confirmAction?.type === 'attack' ? handleConfirmAttack : handleConfirmUpgrade}
+        onCancel={() => setConfirmAction(null)}
+        confirmVariant={confirmAction?.type === 'attack' ? 'danger' : 'primary'}
+        confirmLabel={confirmAction?.type === 'attack' ? t('hud.confirm_attack') : t('hud.confirm_upgrade')}
+        loading={loading}
+      >
+        {confirmAction?.type === 'attack' ? (
+          <>
+            {t('hud.cost')}: {attackEnergyCost} {t('general.energy')}<br />
+            {t('hud.target')}: {targetName || target}<br />
+            {cooldownRemaining > 0 && `${t('hud.cooldown')}: ${cooldownRemaining}s`}
+          </>
+        ) : confirmAction?.system ? (
+          <>
+            {t('upgrade.btn')} {SYSTEMS[confirmAction.system].name} Lv.
+            {civ[confirmAction.system === 'energyCollector' ? 'energyCollectorLv' :
+                 confirmAction.system === 'weapon' ? 'weaponLv' :
+                 confirmAction.system === 'shield' ? 'shieldLv' :
+                 confirmAction.system === 'radar' ? 'radarLv' : 'engineLv']} →{' '}
+            {civ[confirmAction.system === 'energyCollector' ? 'energyCollectorLv' :
+                 confirmAction.system === 'weapon' ? 'weaponLv' :
+                 confirmAction.system === 'shield' ? 'shieldLv' :
+                 confirmAction.system === 'radar' ? 'radarLv' : 'engineLv'] + 1}
+          </>
+        ) : null}
+      </TxConfirm>
+    </Container>
+  );
+}
