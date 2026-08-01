@@ -30,84 +30,125 @@ function createInitialState(): ContractState {
   };
 }
 
-/**
- * Initialize contract instances from the current window.ethereum provider.
- * Returns the new state, or null if ethereum is unavailable.
- */
-async function initContracts(): Promise<ContractState | null> {
-  if (!window.ethereum) {
-    return { ...createInitialState(), isReady: true, isSimulated: true };
-  }
+/* ═══════════════════════════════════════════════════════════
+ * 模块级单例 — 修复: 9 个组件各自调用 useContract() 导致
+ * 页面加载时重复触发 eth_requestAccounts (-32002 错误)
+ *
+ * 方案: 首次调用触发 initContracts(), 后续调用复用结果。
+ * accountsChanged / chainChanged 事件统一由单例层处理。
+ * ═══════════════════════════════════════════════════════════ */
 
-  const provider = new BrowserProvider(window.ethereum);
-  const signer = await provider.getSigner();
-  const hasAddresses = !!GAME.SILENT_EXPANSE && !!GAME.SES_TOKEN && !!GAME.ALLIANCE;
+let sharedProvider: BrowserProvider | null = null;
+let sharedSigner: JsonRpcSigner | null = null;
+let sharedState: ContractState | null = null;
+let initPromise: Promise<ContractState | null> | null = null;
 
-  if (!hasAddresses) {
-    return { ...createInitialState(), isReady: true, isSimulated: true };
-  }
+/** 单例初始化 — 只执行一次 getSigner() */
+async function getSharedState(): Promise<ContractState | null> {
+  if (sharedState) return sharedState;
+  if (initPromise) return initPromise;
 
-  const game = new Contract(GAME.SILENT_EXPANSE, SILENT_EXPANSE_ABI, signer);
-  const sesToken = new Contract(GAME.SES_TOKEN, SES_ABI, signer);
-  const alliance = new Contract(GAME.ALLIANCE, ALLIANCE_ABI, signer);
-  const dailyMinter = GAME.DAILY_MINTER
-    ? new Contract(GAME.DAILY_MINTER, DAILY_MINTER_ABI, signer)
-    : null;
+  initPromise = (async () => {
+    try {
+      if (!window.ethereum) {
+        sharedState = { ...createInitialState(), isReady: true, isSimulated: true };
+        return sharedState;
+      }
 
-  return {
-    provider, signer, game, sesToken, alliance, dailyMinter,
-    isReady: true, isSimulated: false, error: null,
-  };
+      const provider = new BrowserProvider(window.ethereum);
+      sharedProvider = provider;
+
+      // 获取 signer 会触发 eth_requestAccounts — 只调用一次
+      let signer: JsonRpcSigner | null = null;
+      try {
+        signer = await provider.getSigner();
+        sharedSigner = signer;
+      } catch (e) {
+        // 用户拒绝连接: 降级为只读模式 (无 signer), 不阻塞页面
+        console.warn('[useContract] signer unavailable, read-only mode:', e);
+      }
+
+      const hasAddresses = !!GAME.SILENT_EXPANSE && !!GAME.SES_TOKEN && !!GAME.ALLIANCE;
+      if (!hasAddresses) {
+        sharedState = { ...createInitialState(), isReady: true, isSimulated: true };
+        return sharedState;
+      }
+
+      if (!signer) {
+        sharedState = { ...createInitialState(), isReady: true, isSimulated: true, error: 'Wallet not connected' };
+        return sharedState;
+      }
+
+      sharedState = {
+        provider,
+        signer,
+        game: new Contract(GAME.SILENT_EXPANSE, SILENT_EXPANSE_ABI, signer),
+        sesToken: new Contract(GAME.SES_TOKEN, SES_ABI, signer),
+        alliance: new Contract(GAME.ALLIANCE, ALLIANCE_ABI, signer),
+        dailyMinter: GAME.DAILY_MINTER
+          ? new Contract(GAME.DAILY_MINTER, DAILY_MINTER_ABI, signer)
+          : null,
+        isReady: true,
+        isSimulated: false,
+        error: null,
+      };
+      return sharedState;
+    } catch (e) {
+      sharedState = {
+        ...createInitialState(),
+        isReady: true,
+        error: e instanceof Error ? e.message : String(e),
+      };
+      return sharedState;
+    }
+  })();
+
+  return initPromise;
+}
+
+/** 钱包切换/网络切换时重置单例（只重建一次，所有订阅者共享） */
+function resetSharedState() {
+  sharedState = null;
+  sharedProvider = null;
+  sharedSigner = null;
+  initPromise = null;
 }
 
 /**
- * useContract — 统一的合约连接层。
+ * useContract — 统一的合约连接层（全局单例）。
  *
- * - 监听 MetaMask `accountsChanged` 事件，钱包切换时自动重建合约实例
- * - 监听 `chainChanged` 事件，网络切换时自动重建
+ * - 所有组件共享同一个初始化结果，避免重复 eth_requestAccounts
+ * - 监听 `accountsChanged` / `chainChanged`，重建后广播给所有订阅者
  * - isSimulated = true 时表示合约不可用
  */
 export function useContract(): ContractState {
   const [state, setState] = useState<ContractState>(createInitialState);
 
-  const reinit = useCallback(async () => {
-    try {
-      const next = await initContracts();
-      if (next) setState(next);
-    } catch (e) {
-      setState(prev => ({
-        ...prev, isReady: true,
-        error: e instanceof Error ? e.message : String(e),
-      }));
-    }
-  }, []);
-
   useEffect(() => {
     let cancelled = false;
 
-    const init = async () => {
-      const next = await initContracts();
-      if (!cancelled && next) setState(next);
+    // 订阅单例状态
+    const apply = (s: ContractState | null) => {
+      if (!cancelled && s) setState(s);
     };
 
-    init();
+    // 初始加载（模块级单例只触发一次 getSigner）
+    getSharedState().then(apply);
 
-    // ── Listen for wallet account changes ──
-    // When user switches accounts in MetaMask, the old signer becomes stale.
-    // We must recreate all contract instances with the new signer.
+    // ── 统一监听钱包事件, 重建单例后广播 ──
     const handleAccountsChanged = (accounts: unknown) => {
       if (!Array.isArray(accounts) || accounts.length === 0) {
-        // Wallet disconnected or locked
-        setState(createInitialState());
+        resetSharedState();
+        if (!cancelled) setState(createInitialState());
         return;
       }
-      reinit();
+      resetSharedState();
+      getSharedState().then(apply);
     };
 
-    // ── Listen for chain changes ──
-    // When user switches networks, provider + signer must be recreated.
     const handleChainChanged = () => {
-      reinit();
+      resetSharedState();
+      getSharedState().then(apply);
     };
 
     if (window.ethereum?.on) {
@@ -117,12 +158,10 @@ export function useContract(): ContractState {
 
     return () => {
       cancelled = true;
-      if (window.ethereum?.removeListener) {
-        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-        window.ethereum.removeListener('chainChanged', handleChainChanged);
-      }
+      // 注意: 不 removeListener — 单例模式要求事件监听常驻,
+      // 组件卸载时移除会导致其他组件失去事件
     };
-  }, [reinit]);
+  }, []);
 
   return state;
 }
