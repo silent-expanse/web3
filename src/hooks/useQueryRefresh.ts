@@ -2,20 +2,24 @@
  * useQueryRefresh — 基于 TanStack Query 的数据刷新层
  *
  * 合约连接时从链上拉取数据。
+ * 所有独立 view 调用并行发出，单次轮询仅 1 RTT。
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { formatEther } from 'ethers';
+import { formatEther, Contract } from 'ethers';
 import { useGameStore } from './useGameStore';
 import { useContract } from './useContract';
+import { GAME } from '../utils/constants';
+import { ENERGY_MARKET_ABI } from '../utils/contract';
 
-// 连续轮询失败计数（每类错误独立计数，模块级避免污染 store type）
+// 连续轮询失败计数
 const pollFailCount: Record<string, number> = {};
 
 /**
  * useCivPolling — 合约模式下的周期性数据刷新
  *
- * 定时拉取玩家文明数据和 DFT 余额。
+ * 14 个独立 view 调用通过 Promise.allSettled 并行发出，
+ * 每个调用独立 try/catch，单次失败不影响其他数据刷新。
  */
 export function useCivPolling() {
   const ct = useContract();
@@ -25,113 +29,144 @@ export function useCivPolling() {
   return useQuery({
     queryKey: ['civPolling', address],
     queryFn: async () => {
-      if (!connected || !address || !ct.darkForest || !ct.dftToken) {
+      if (!connected || !address || !ct.game || !ct.sesToken) {
         return null;
       }
       try {
-        const [raw, balanceRaw] = await Promise.all([
-          ct.darkForest.getCivilization(address),
-          ct.dftToken.balanceOf(address),
+        /* ─── 第 1 批：SilentExpanseStrife 全部独立 view 并行发出 ─── */
+        const df = ct.game;
+        const ses = ct.sesToken;
+
+        const [civResult, balResult, tokResult, pendingResult,
+               shResult, rateResult, durResult, boostResult] = await Promise.allSettled([
+          df.getCivilization(address),
+          ses.balanceOf(address),
+          df.getAttackTokenInfo(address),
+          df.pendingCombatEnergy(address),
+          Promise.allSettled([
+            df.getCurrentShieldHP(address),
+            df.getMaxShieldHP(address),
+          ]),
+          df.getEnergyCollectRate(address),
+          df.getCollectorDurability(address),
+          df.getCombatBoost(address),
         ]);
-        const civ = {
-          name: String(raw.name ?? ''),
-          x: Number(raw.x ?? raw.location?.x ?? 0),
-          y: Number(raw.y ?? raw.location?.y ?? 0),
-          z: Number(raw.z ?? raw.location?.z ?? 0),
-          energy: Number(raw.energy ?? 0),
-          health: Number(raw.health ?? 0),
-          shieldHP: 0,           // from getCurrentShieldHP() below
-          maxShieldHP: 0,        // from getMaxShieldHP() below
-          energyCollectorLv: Number(raw.energyCollectorLv ?? 1),
-          weaponLv: Number(raw.weaponLv ?? 1),
-          radarLv: Number(raw.radarLv ?? 1),
-          shieldLv: Number(raw.shieldLv ?? 1),
-          engineLv: Number(raw.engineLv ?? 1),
-          scanRange: Number(raw.scanRange ?? 1000),
-          isRuins: Boolean(raw.isRuins ?? false),
-        };
-        const dftBalance = formatEther(balanceRaw);
 
-        useGameStore.setState({
-          playerCiv: civ,
-          dftBalance: (parseFloat(dftBalance)).toFixed(2),
-        });
+        /* ─── 解析结果 ─── */
 
-        // Also try to read attack token info
-        try {
-          const tokRaw = await ct.darkForest.getAttackTokenInfo(address);
-          // rate 是 18 位定点数 (uint256 × 1e18)，需除以 1e18
-          const rateBig: bigint = tokRaw.ratePerSec ?? tokRaw[3] ?? 0n;
+        // 1. Civilization + SES balance
+        if (civResult.status === 'fulfilled') {
+          const raw = civResult.value;
+          const civ = {
+            name: String(raw.name ?? ''),
+            x: Number(raw.x ?? raw.location?.x ?? 0),
+            y: Number(raw.y ?? raw.location?.y ?? 0),
+            z: Number(raw.z ?? raw.location?.z ?? 0),
+            energy: Number(raw.energy ?? 0),
+            health: Number(raw.health ?? 0),
+            shieldHP: 0,
+            maxShieldHP: 0,
+            energyCollectorLv: Number(raw.energyCollectorLv ?? 1),
+            weaponLv: Number(raw.weaponLv ?? 1),
+            radarLv: Number(raw.radarLv ?? 1),
+            shieldLv: Number(raw.shieldLv ?? 1),
+            engineLv: Number(raw.engineLv ?? 1),
+            scanRange: Number(raw.scanRange ?? 1000),
+            isRuins: Boolean(raw.isRuins ?? false),
+          };
+          useGameStore.setState({
+            playerCiv: civ,
+            isDestroyed: Boolean(raw.isRuins ?? false),
+          });
+        }
+
+        if (balResult.status === 'fulfilled') {
+          const sesBalance = formatEther(balResult.value);
+          useGameStore.setState({ sesBalance: (parseFloat(sesBalance)).toFixed(2) });
+        }
+
+        // 2. Attack token info
+        if (tokResult.status === 'fulfilled') {
+          const t = tokResult.value;
+          const rateBig: bigint = t.ratePerSec ?? t[3] ?? 0n;
           useGameStore.setState({
             attackTokens: {
-              current: Number(tokRaw.current ?? tokRaw[0] ?? 0),
-              max: Number(tokRaw.max ?? tokRaw[1] ?? 5),
-              intervalSec: Number(tokRaw.intervalSec ?? tokRaw[2] ?? 60),
+              current: Number(t.current ?? t[0] ?? 0),
+              max: Number(t.max ?? t[1] ?? 5),
+              intervalSec: Number(t.intervalSec ?? t[2] ?? 60),
               ratePerSec: Number(rateBig) / 1e18,
             },
           });
-        } catch { /* ignore */ }
+        }
 
-        // Try to read pending combat energy
-        try {
-          const pendingRaw = await ct.darkForest.pendingCombatEnergy(address);
-          useGameStore.setState({ pendingEnergy: Number(pendingRaw) });
-        } catch { /* ignore */ }
+        // 3. Pending combat energy
+        if (pendingResult.status === 'fulfilled') {
+          useGameStore.setState({ pendingEnergy: Number(pendingResult.value) });
+        }
 
-        // Try to read shield HP
-        try {
-          const [shieldHP, maxShieldHP] = await Promise.all([
-            ct.darkForest.getCurrentShieldHP(address),
-            ct.darkForest.getMaxShieldHP(address),
-          ]);
-          useGameStore.setState(s => ({
-            playerCiv: s.playerCiv ? { ...s.playerCiv, shieldHP: Number(shieldHP), maxShieldHP: Number(maxShieldHP) } : null,
-          }));
-        } catch { /* ignore */ }
+        // 4. Shield HP (子 Promise.allSettled)
+        if (shResult.status === 'fulfilled') {
+          const [cur, max] = shResult.value;
+          if (cur.status === 'fulfilled' && max.status === 'fulfilled') {
+            useGameStore.setState(s => ({
+              playerCiv: s.playerCiv
+                ? { ...s.playerCiv, shieldHP: Number(cur.value), maxShieldHP: Number(max.value) }
+                : null,
+            }));
+          }
+        }
 
-        // Set isDestroyed from civ data
-        useGameStore.setState({ isDestroyed: Boolean(raw.isRuins ?? false) });
+        // 5. Energy collect rate
+        if (rateResult.status === 'fulfilled') {
+          useGameStore.setState({ collectRate: Number(rateResult.value) });
+        }
 
-        // Try to read energy collect rate
-        try {
-          const rate = await ct.darkForest.getEnergyCollectRate(address);
-          useGameStore.setState({ collectRate: Number(rate) });
-        } catch { /* ignore */ }
+        // 6. Collector durability
+        if (durResult.status === 'fulfilled') {
+          const d = durResult.value;
+          useGameStore.setState({ collectorDurability: { current: Number(d[0]), max: Number(d[1]) } });
+        }
 
-        // Try to read collector durability
-        try {
-          const dur = await ct.darkForest.getCollectorDurability(address);
-          useGameStore.setState({ collectorDurability: { current: Number(dur[0]), max: Number(dur[1]) } });
-        } catch { /* ignore */ }
+        // 7. Combat boost
+        if (boostResult.status === 'fulfilled') {
+          useGameStore.setState({ combatBoost: Number(boostResult.value) });
+        }
 
-        // Try to read combat boost (alliance totem bonus)
-        try {
-          const boost = await ct.darkForest.getCombatBoost(address);
-          useGameStore.setState({ combatBoost: Number(boost) });
-        } catch { /* ignore */ }
-
-        // Try to read DailyMinter epoch info
+        /* ─── 第 2 批：DailyMinter — epoch 依赖链，分两批并行 ─── */
         if (ct.dailyMinter) {
-          try {
-            const epoch = Number(await ct.dailyMinter.currentEpoch());
-            const lastDistributed = Number(await ct.dailyMinter.lastDistributedEpoch());
-            const epochInfo = await ct.dailyMinter.getEpochInfo(epoch);
-            const claimed = await ct.dailyMinter.epochClaimed(epoch, address);
-            // epochInfo: (startTimestamp, endTimestamp, distributed)
+          // 第 2a 批：epoch 值和分布式信息（无依赖）
+          const [epochRes, distRes, emissionRes] = await Promise.allSettled([
+            ct.dailyMinter.currentEpoch(),
+            ct.dailyMinter.lastDistributedEpoch(),
+            ct.dailyMinter.DAILY_EMISSION(),
+          ]);
+
+          if (emissionRes.status === 'fulfilled') {
+            useGameStore.setState({ dailyEmission: Number(emissionRes.value) / 1e18 });
+          }
+
+          // 第 2b 批：依赖 epoch 结果
+          if (epochRes.status === 'fulfilled') {
+            const epoch = Number(epochRes.value);
+            // getEpochInfo 返回 (epochIndex, totalEmissionWei, distributed)
+            // 纪元起止时间需用 genesisTimestamp + DAY_SECONDS 计算
+            const [genesisRes, daySecRes, claimedRes] = await Promise.allSettled([
+              ct.dailyMinter!.genesisTimestamp(),
+              ct.dailyMinter!.DAY_SECONDS(),
+              ct.dailyMinter!.epochClaimed(epoch, address),
+            ]);
+
+            const genesis = genesisRes.status === 'fulfilled' ? Number(genesisRes.value) : 0;
+            const daySec = daySecRes.status === 'fulfilled' ? Number(daySecRes.value) : 86400;
+
             useGameStore.setState({
               currentEpoch: epoch,
-              lastDistributedEpoch: lastDistributed,
-              epochStartTime: Number(epochInfo[0]),
-              epochEndTime: Number(epochInfo[1]),
-              epochClaimed: claimed,
+              lastDistributedEpoch: distRes.status === 'fulfilled' ? Number(distRes.value) : 0,
+              epochStartTime: genesis + (epoch - 1) * daySec,
+              epochEndTime: genesis + epoch * daySec,
+              epochClaimed: claimedRes.status === 'fulfilled' ? claimedRes.value : false,
             });
-          } catch { /* daily minter not available or read error */ }
-
-          // Read daily DFT emission
-          try {
-            const emission = await ct.dailyMinter.DAILY_EMISSION();
-            useGameStore.setState({ dailyEmission: Number(emission) / 1e18 });
-          } catch { /* ignore */ }
+          }
         }
 
         return { timestamp: Date.now() };
@@ -151,7 +186,6 @@ export function useCivPolling() {
         pollFailCount[category] = (pollFailCount[category] || 0) + 1;
         const count = pollFailCount[category];
 
-        // 首次警告详细日志，后续仅记录计数
         if (count <= 2) {
           console.warn(`[civPolling] ${category} failure #${count}:`, e?.message || e);
         } else if (count === 10 || count % 50 === 0) {
@@ -160,8 +194,103 @@ export function useCivPolling() {
         return null;
       }
     },
-    refetchInterval: 5_000, // 每 5 秒轮询
-    enabled: connected && !!address && !!ct.darkForest && !!ct.dftToken,
+    refetchInterval: 5_000,
+    enabled: connected && !!address && !!ct.game && !!ct.sesToken,
     meta: { isBackground: true },
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
+   useAlliancePolling — 联盟数据轮询
+   ══════════════════════════════════════════════════════════ */
+export function useAlliancePolling() {
+  const ct = useContract();
+  const connected = useGameStore(s => s.connected);
+  const address = useGameStore(s => s.address);
+
+  return useQuery({
+    queryKey: ['alliancePolling', address],
+    queryFn: async () => {
+      if (!connected || !address || !ct.alliance) return null;
+      try {
+        const allianceId: string = await ct.alliance.playerAlliance(address);
+        const hasAlliance = allianceId && allianceId !== '0x' + '00'.repeat(32);
+
+        if (!hasAlliance) {
+          useGameStore.setState({ currentAlliance: null });
+          return { inAlliance: false };
+        }
+
+        const [raw, members, cost, isLeader] = await Promise.all([
+          ct.alliance.alliances(allianceId),
+          ct.alliance.getAllianceMembers(allianceId),
+          ct.alliance.totemUpgradeCost(allianceId),
+          ct.alliance.isLeader(allianceId, address),
+        ]);
+
+        useGameStore.setState({
+          currentAlliance: {
+            id: allianceId,
+            name: String(raw.name ?? ''),
+            memberCount: Number(raw.memberCount ?? raw[3] ?? 0),
+            level: Number(raw.level ?? raw[2] ?? 1),
+          },
+          _allianceMembers: members.slice(0, 10),
+          _allianceTotemLevel: Number(raw.totemLevel ?? raw[6] ?? 0),
+          _allianceTotemEnergy: Number(raw.totemEnergy ?? raw[7] ?? 0),
+          _allianceTotemUpgradeCost: Number(cost),
+          _allianceIsLeader: isLeader,
+        });
+
+        return { inAlliance: true };
+      } catch {
+        return null;
+      }
+    },
+    refetchInterval: 10_000,
+    enabled: connected && !!address && !!ct.alliance,
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
+   useMarketPolling — 能量市场挂单轮询
+   ══════════════════════════════════════════════════════════ */
+export function useMarketPolling() {
+  const ct = useContract();
+  const address = useGameStore(s => s.address);
+
+  return useQuery({
+    queryKey: ['marketPolling'],
+    queryFn: async () => {
+      if (!GAME.ENERGY_MARKET || !ct.provider) return null;
+      try {
+        const market = new Contract(GAME.ENERGY_MARKET, ENERGY_MARKET_ABI, ct.provider);
+        const rawOrders = await market.getActiveOrders(0, 50);
+        const orders: { id: number; price: number; amount: number; seller: string; isMine: boolean }[] = [];
+
+        for (let i = 0; i < rawOrders.length; i++) {
+          const o = rawOrders[i];
+          const sellerAddr = typeof o.seller === 'string' ? o.seller.toLowerCase() : '';
+          if (!sellerAddr) continue;
+          try {
+            const realId = await market.activeOrderIds(i);
+            orders.push({
+              id: Number(realId),
+              amount: Number(o.energyAmount ?? 0),
+              price: Number(o.sesPrice ?? 0) / 1e18,
+              seller: sellerAddr.slice(0, 6) + '...' + sellerAddr.slice(-4),
+              isMine: sellerAddr === (address || '').toLowerCase(),
+            });
+          } catch { /* skip */ }
+        }
+
+        useGameStore.setState({ marketOrders: orders });
+        return { count: orders.length };
+      } catch {
+        return null;
+      }
+    },
+    refetchInterval: 15_000,
+    enabled: !!GAME.ENERGY_MARKET && !!ct.provider,
   });
 }

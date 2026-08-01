@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { parseEther, formatEther, Contract } from 'ethers';
+import { parseEther, formatEther, Contract, MaxUint256, getAddress as checksumAddress } from 'ethers';
 import { useGameStore } from './useGameStore';
 import { useContract } from './useContract';
 import { SYSTEMS, type SystemKey } from '../utils/constants';
@@ -8,24 +8,27 @@ import { ENERGY_MARKET_ABI } from '../utils/contract';
 import { t } from '../i18n';
 
 /* ══════════════════════════════════════════════════════════
-   数值公式（与 BSC 主网合约 DarkForestStorage 一致）
+   数值公式（与 BSC 主网合约 SilentExpanseStrifeStorage 一致）
    验证：cast call 0x96ee... SYS_* / BASE_* / _calc*
    ══════════════════════════════════════════════════════════ */
 
-/** 能量采集速率 (energy/sec): lv≤1 ? 3 : 3 + 10·√(lv-1) */
+/** 能量采集速率 (energy/sec): lv≤1 ? 3 : 3 + 10·√(lv-1)
+ *  简化版：不含推荐加成 (1000+refs*2)/1000，仅用于本地显示。
+ *  合约 _calcCollect() 含完整公式，实际采集以链上为准。
+ */
 export function calcCollectRate(lv: number): number {
   if (lv <= 1) return GAME.BASE_COLLECT;
   return GAME.BASE_COLLECT + GAME.COLLECT_BONUS * Math.sqrt(lv - 1);
 }
 
-/** 攻击力: 900 + 10·√(lv-1)  (ATK_BASE=900, ATK_RATE=10) */
+/** 攻击力: 900 + 10·lv²  (ATK_BASE=900, ATK_RATE=10) 与合约 _calcAttack() 一致 */
 export function calcAttackPower(lv: number): number {
-  return GAME.ATK_BASE + GAME.ATK_RATE * Math.sqrt(Math.max(0, lv - 1));
+  return GAME.ATK_BASE + GAME.ATK_RATE * lv * lv;
 }
 
-/** 防御力: 540 + 6·√(lv-1)  (DEF_BASE=540, DEF_RATE=6) */
+/** 防御力: 540 + 6·lv²  (DEF_BASE=540, DEF_RATE=6) 与合约 _calcShieldDefense() 一致 */
 export function calcShieldDefense(lv: number): number {
-  return GAME.DEF_BASE + GAME.DEF_RATE * Math.sqrt(Math.max(0, lv - 1));
+  return GAME.DEF_BASE + GAME.DEF_RATE * lv * lv;
 }
 
 /** 雷达探测范围: 1000 + 150·L + 5·L² */
@@ -33,9 +36,9 @@ export function calcRadarRange(lv: number): number {
   return GAME.RADAR_BASE + GAME.RADAR_LINEAR * lv + GAME.RADAR_QUAD * lv * lv;
 }
 
-/** 护盾 HP: 3600 + 15·√(lv-1)  (SHIELD_HP_BASE=3600, SHIELD_HP_RATE=15) */
+/** 护盾 HP: 3600 + 15·lv²  (SHIELD_HP_BASE=3600, SHIELD_HP_RATE=15) 与合约 _calcShieldHP() 一致 */
 export function calcMaxShieldHP(lv: number): number {
-  return GAME.SHIELD_HP_BASE + GAME.SHIELD_HP_RATE * Math.sqrt(Math.max(0, lv - 1));
+  return GAME.SHIELD_HP_BASE + GAME.SHIELD_HP_RATE * lv * lv;
 }
 
 /** 引擎速度: 10 + 5·(L-1) */
@@ -99,33 +102,37 @@ export function useGameActions() {
 
   /* ─── 0. 获取入场费 ─── */
   const fetchEntryFee = useCallback(async (): Promise<string> => {
-    requireContract(ct.darkForest, 'DarkForest');
-    const feeWei = await ct.darkForest!.getEntryFee();
+    requireContract(ct.game, 'SilentExpanseStrife');
+    const feeWei = await ct.game!.getEntryFee();
     return formatEther(feeWei);
   }, [ct]);
 
   /* ─── 0a. 创建文明 ─── */
   const createCivilization = useCallback(
     async (name: string, referrer?: string): Promise<boolean> => {
-      requireContract(ct.darkForest, 'DarkForest');
+      requireContract(ct.game, 'SilentExpanseStrife');
       requireContract(ct.signer, 'Signer');
       useGameStore.setState({ loading: true, error: null });
 
       try {
-        const feeWei = await ct.darkForest!.getEntryFee();
+        const feeWei = await ct.game!.getEntryFee();
         const overrides = { value: feeWei };
 
         let tx;
-        if (referrer && /^0x[0-9a-fA-F]{40}$/.test(referrer.trim())) {
-          tx = await ct.darkForest!.createCivilization(name.trim(), referrer.trim(), overrides);
+        if (referrer) {
+          const refAddr = checksumAddress(referrer.trim());
+          tx = await ct.game!.createCivilization(name.trim(), refAddr, overrides);
         } else {
-          tx = await ct.darkForest!.createCivilization(name.trim(), overrides);
+          tx = await ct.game!.createCivilization(name.trim(), overrides);
         }
         await tx.wait();
 
         const addr = await ct.signer!.getAddress();
-        const raw = await ct.darkForest!.getCivilization(addr);
+        const raw = await ct.game!.getCivilization(addr);
         const civ = parseCivData(raw);
+        // 从合约读取 shieldHP（getCivilization 不含此字段）
+        const shieldHP = await ct.game!.getCurrentShieldHP(addr);
+        civ.shieldHP = Number(shieldHP);
         useGameStore.setState({
           connected: true,
           address: addr,
@@ -134,7 +141,7 @@ export function useGameActions() {
           lastCollectTime: Date.now(),
         });
 
-        useGameStore.getState().claimDFT();
+        useGameStore.getState().claimSES();
         useGameStore.getState().addSuccessToast(t('toast.civ_created', { name }));
         return true;
       } catch (e) {
@@ -152,27 +159,27 @@ export function useGameActions() {
     async (system: SystemKey) => {
       const store = useGameStore.getState();
       if (!store.playerCiv) return;
-      requireContract(ct.darkForest, 'DarkForest');
-      requireContract(ct.dftToken, 'DFT Token');
+      requireContract(ct.game, 'SilentExpanseStrife');
+      requireContract(ct.sesToken, 'SES Token');
       useGameStore.setState({ loading: true, error: null });
 
       try {
-        const df = ct.darkForest!;
-        const dft = ct.dftToken!;
+        const df = ct.game!;
+        const ses = ct.sesToken!;
         const addr = await getAddress();
 
         // 从合约读取真实升级成本
         const realCost = await df.getUpgradeCost(addr, SYS_TO_CONTRACT[system]);
-        const costDFT = Number(realCost.dft) / 1e18;
+        const costSES = Number(realCost.ses) / 1e18;
         const costEnergy = Number(realCost.energy);
 
-        const dftBalance = parseFloat(store.dftBalance);
+        const sesBalance = parseFloat(store.sesBalance);
         const energy = store.playerCiv.energy;
 
-        if (dftBalance < costDFT) {
+        if (sesBalance < costSES) {
           useGameStore.setState({
             loading: false,
-            error: t('toast.dft_insufficient', { need: costDFT.toFixed(2), have: dftBalance.toFixed(2) }),
+            error: t('toast.ses_insufficient', { need: costSES.toFixed(2), have: sesBalance.toFixed(2) }),
           });
           return;
         }
@@ -184,6 +191,14 @@ export function useGameActions() {
           return;
         }
 
+        // 确保 SES 授权额度足够（upgradeSystem 会 transferFrom）
+        // 每次检查，不够就授权 MaxUint256（一次授权永久有效）
+        const allowance = await ses.allowance(addr, GAME.SILENT_EXPANSE);
+        if (allowance < realCost.ses) {
+          const approveTx = await ses.approve(GAME.SILENT_EXPANSE, MaxUint256);
+          await approveTx.wait();
+        }
+
         const tx = await df.upgradeSystem(SYS_IDS[system]);
         await tx.wait();
 
@@ -191,7 +206,7 @@ export function useGameActions() {
         const civ = await df.getCivilization(addr);
         useGameStore.setState({
           playerCiv: { ...store.playerCiv!, ...parseCivData(civ) },
-          dftBalance: formatBalance(await dft.balanceOf(addr)),
+          sesBalance: formatBalance(await ses.balanceOf(addr)),
         });
 
         useGameStore.getState().addSuccessToast(t('toast.upgrade_success', { icon: SYSTEMS[system].icon, name: SYSTEMS[system].name }));
@@ -217,13 +232,15 @@ export function useGameActions() {
     useGameStore.setState({ loading: true, error: null, lastAttackTime: Date.now() });
 
     try {
-      requireContract(ct.darkForest, 'DarkForest');
-      const tx = await ct.darkForest!.attack(store.selectedTarget);
+      requireContract(ct.game, 'SilentExpanseStrife');
+      const tx = await ct.game!.attack(store.selectedTarget);
       await tx.wait();
       const addr = await getAddress();
-      const civ = await ct.darkForest!.getCivilization(addr);
+      const civ = parseCivData(await ct.game!.getCivilization(addr));
+      // 合约读取 shieldHP（getCivilization 不含此字段）
+      civ.shieldHP = Number(await ct.game!.getCurrentShieldHP(addr));
       useGameStore.setState({
-        playerCiv: { ...store.playerCiv, ...parseCivData(civ) },
+        playerCiv: { ...store.playerCiv, ...civ },
       });
     } catch (e) {
       useGameStore.getState().addErrorToast(t('toast.attack_failed', { msg: errMsg(e) }));
@@ -239,16 +256,19 @@ export function useGameActions() {
     useGameStore.setState({ loading: true, error: null });
 
     try {
-      requireContract(ct.darkForest, 'DarkForest');
-      const tx = await ct.darkForest!.collectEnergy();
+      requireContract(ct.game, 'SilentExpanseStrife');
+      const tx = await ct.game!.collectEnergy();
       await tx.wait();
       const addr = await getAddress();
-      const data = await ct.darkForest!.getCivilization(addr);
+      const raw = await ct.game!.getCivilization(addr);
+      const civ = parseCivData(raw);
+      // 一并刷新 shieldHP
+      civ.shieldHP = Number(await ct.game!.getCurrentShieldHP(addr));
       useGameStore.setState(s => ({
-        playerCiv: s.playerCiv ? { ...s.playerCiv, ...parseCivData(data) } : null,
+        playerCiv: s.playerCiv ? { ...s.playerCiv, ...civ } : null,
         lastCollectTime: Date.now(),
       }));
-      useGameStore.getState().addSuccessToast(t('toast.collect_success', { amount: Math.floor(calcCollectRate(data.energyCollectorLv ?? 1) * 10) }));
+      useGameStore.getState().addSuccessToast(t('toast.collect_success', { amount: Math.floor(calcCollectRate(raw.energyCollectorLv ?? 1) * 10) }));
     } catch (e) {
       useGameStore.getState().addErrorToast(t('toast.collect_failed', { msg: errMsg(e) }));
     } finally {
@@ -263,12 +283,12 @@ export function useGameActions() {
     useGameStore.setState({ loading: true, error: null });
 
     try {
-      requireContract(ct.darkForest, 'DarkForest');
-      const tx = await ct.darkForest!.claimCombatEnergy();
+      requireContract(ct.game, 'SilentExpanseStrife');
+      const tx = await ct.game!.claimCombatEnergy();
       await tx.wait();
       const addr = await getAddress();
-      const civ = await ct.darkForest!.getCivilization(addr);
-      const pending = await ct.darkForest!.pendingCombatEnergy(addr);
+      const civ = await ct.game!.getCivilization(addr);
+      const pending = await ct.game!.pendingCombatEnergy(addr);
       useGameStore.setState({
         playerCiv: { ...useGameStore.getState().playerCiv!, ...parseCivData(civ) },
         pendingEnergy: Number(pending),
@@ -281,13 +301,28 @@ export function useGameActions() {
     }
   }, [ct]);
 
-  /* ─── 5. 领取每日 DFT ─── */
-  const claimDailyDFT = useCallback(async () => {
+  /* ─── 4a. 分发当前纪元 SES（全局仅需一次，多次调用无效果） ─── */
+  const distributeAction = useCallback(async () => {
+    useGameStore.setState({ loading: true, error: null });
+    try {
+      requireContract(ct.dailyMinter, 'DailyMinter');
+      const tx = await ct.dailyMinter!.distribute();
+      await tx.wait();
+      useGameStore.getState().addSuccessToast('📤 分发成功！可以领取 SES 了');
+    } catch (e) {
+      useGameStore.getState().addErrorToast(t('toast.claim_ses_failed', { msg: errMsg(e) }));
+    } finally {
+      useGameStore.setState({ loading: false });
+    }
+  }, [ct]);
+
+  /* ─── 5. 领取每日 SES ─── */
+  const claimDailySES = useCallback(async () => {
     useGameStore.setState({ loading: true, error: null });
 
     try {
       requireContract(ct.dailyMinter, 'DailyMinter');
-      requireContract(ct.dftToken, 'DFT Token');
+      requireContract(ct.sesToken, 'SES Token');
 
       // Ensure epoch is distributed (anyone can call; no-op if already done)
       try {
@@ -300,12 +335,12 @@ export function useGameActions() {
       await tx.wait();
       const addr = await getAddress();
       useGameStore.setState({
-        dftBalance: formatBalance(await ct.dftToken!.balanceOf(addr)),
+        sesBalance: formatBalance(await ct.sesToken!.balanceOf(addr)),
       });
-      useGameStore.getState().claimDFT();
-      useGameStore.getState().addSuccessToast(t('toast.claim_dft_success'));
+      useGameStore.getState().claimSES();
+      useGameStore.getState().addSuccessToast(t('toast.claim_ses_success'));
     } catch (e) {
-      useGameStore.getState().addErrorToast(t('toast.claim_dft_failed', { msg: errMsg(e) }));
+      useGameStore.getState().addErrorToast(t('toast.claim_ses_failed', { msg: errMsg(e) }));
     } finally {
       useGameStore.setState({ loading: false });
     }
@@ -316,8 +351,8 @@ export function useGameActions() {
     async (x: number, y: number, z: number) => {
       useGameStore.setState({ loading: true, error: null });
       try {
-        requireContract(ct.darkForest, 'DarkForest');
-        const tx = await ct.darkForest!.startMove(x, y, z);
+        requireContract(ct.game, 'SilentExpanseStrife');
+        const tx = await ct.game!.startMove(x, y, z);
         await tx.wait();
         useGameStore.getState().addSuccessToast(t('toast.move_success'));
       } catch (e) {
@@ -333,8 +368,8 @@ export function useGameActions() {
   const spaceJump = useCallback(async () => {
     useGameStore.setState({ loading: true, error: null });
     try {
-      requireContract(ct.darkForest, 'DarkForest');
-      const tx = await ct.darkForest!.spaceJump();
+      requireContract(ct.game, 'SilentExpanseStrife');
+      const tx = await ct.game!.spaceJump();
       await tx.wait();
       useGameStore.getState().addSuccessToast(t('toast.jump_success'));
     } catch (e) {
@@ -348,14 +383,16 @@ export function useGameActions() {
   const rebuildCivilizationAction = useCallback(async () => {
     useGameStore.setState({ loading: true, error: null });
     try {
-      requireContract(ct.darkForest, 'DarkForest');
-      const tx = await ct.darkForest!.rebuildCivilization();
+      requireContract(ct.game, 'SilentExpanseStrife');
+      const tx = await ct.game!.rebuildCivilization();
       await tx.wait();
       // 重建后刷新文明数据
       const addr = await getAddress();
-      const raw = await ct.darkForest!.getCivilization(addr);
+      const raw = await ct.game!.getCivilization(addr);
+      const civ = parseCivData(raw);
+      civ.shieldHP = Number(await ct.game!.getCurrentShieldHP(addr));
       useGameStore.setState({
-        playerCiv: { ...useGameStore.getState().playerCiv!, ...parseCivData(raw) },
+        playerCiv: { ...useGameStore.getState().playerCiv!, ...civ },
       });
       useGameStore.getState().addSuccessToast(t('toast.rebuild_success'));
     } catch (e) {
@@ -371,12 +408,12 @@ export function useGameActions() {
     if (!store.playerCiv) return;
     useGameStore.setState({ loading: true, error: null });
     try {
-      requireContract(ct.darkForest, 'DarkForest');
-      const tx = await ct.darkForest!.repairCollector(amount);
+      requireContract(ct.game, 'SilentExpanseStrife');
+      const tx = await ct.game!.repairCollector(amount);
       await tx.wait();
       // 刷新耐久度
       const addr = await getAddress();
-      const dur = await ct.darkForest!.getCollectorDurability(addr);
+      const dur = await ct.game!.getCollectorDurability(addr);
       useGameStore.setState({
         collectorDurability: { current: Number(dur[0]), max: Number(dur[1]) },
       });
@@ -392,17 +429,19 @@ export function useGameActions() {
   const repairShield = useCallback(async () => {
     const store = useGameStore.getState();
     if (!store.playerCiv) return;
+    // 优先使用合约读取的 maxShieldHP，兜底用本地计算（与合约一致）
     const maxHP = store.playerCiv.maxShieldHP || calcMaxShieldHP(store.playerCiv.shieldLv);
     if (store.playerCiv.shieldHP >= maxHP) return;
     useGameStore.setState({ loading: true, error: null });
 
     try {
-      requireContract(ct.darkForest, 'DarkForest');
+      requireContract(ct.game, 'SilentExpanseStrife');
       const repairAmount = maxHP - store.playerCiv.shieldHP;
-      const tx = await ct.darkForest!.repairShield(repairAmount);
+      const tx = await ct.game!.repairShield(repairAmount);
       await tx.wait();
       const addr = await getAddress();
-      const hp = await ct.darkForest!.getCurrentShieldHP(addr);
+      // 从合约读取最新护盾 HP
+      const hp = await ct.game!.getCurrentShieldHP(addr);
       useGameStore.setState(s => ({
         playerCiv: s.playerCiv ? { ...s.playerCiv, shieldHP: Number(hp) } : null,
       }));
@@ -421,11 +460,11 @@ export function useGameActions() {
     useGameStore.setState({ loading: true, error: null });
 
     try {
-      requireContract(ct.darkForest, 'DarkForest');
-      const tx = await ct.darkForest!.regenShield();
+      requireContract(ct.game, 'SilentExpanseStrife');
+      const tx = await ct.game!.regenShield();
       await tx.wait();
       const addr = await getAddress();
-      const hp = await ct.darkForest!.getCurrentShieldHP(addr);
+      const hp = await ct.game!.getCurrentShieldHP(addr);
       useGameStore.setState(s => ({
         playerCiv: s.playerCiv ? { ...s.playerCiv, shieldHP: Number(hp) } : null,
       }));
@@ -441,11 +480,11 @@ export function useGameActions() {
   const repairAll = useCallback(async () => {
     useGameStore.setState({ loading: true, error: null });
     try {
-      requireContract(ct.darkForest, 'DarkForest');
-      const tx = await ct.darkForest!.repairAll();
+      requireContract(ct.game, 'SilentExpanseStrife');
+      const tx = await ct.game!.repairAll();
       await tx.wait();
       const addr = await getAddress();
-      const civ = await ct.darkForest!.getCivilization(addr);
+      const civ = await ct.game!.getCivilization(addr);
       useGameStore.setState({
         playerCiv: { ...useGameStore.getState().playerCiv!, ...parseCivData(civ) },
       });
@@ -461,11 +500,11 @@ export function useGameActions() {
   const cancelMove = useCallback(async () => {
     useGameStore.setState({ loading: true, error: null });
     try {
-      requireContract(ct.darkForest, 'DarkForest');
-      const tx = await ct.darkForest!.cancelMove();
+      requireContract(ct.game, 'SilentExpanseStrife');
+      const tx = await ct.game!.cancelMove();
       await tx.wait();
       const addr = await getAddress();
-      const pos = await ct.darkForest!.getCurrentPosition(addr);
+      const pos = await ct.game!.getCurrentPosition(addr);
       useGameStore.setState(s => ({
         playerCiv: s.playerCiv
           ? { ...s.playerCiv, x: Number(pos.x ?? pos[0]), y: Number(pos.y ?? pos[1]), z: Number(pos.z ?? pos[2]) }
@@ -480,35 +519,6 @@ export function useGameActions() {
   }, [ct]);
 
   /* ─── 9. 创建联盟 ─── */
-  /** 从合约读取玩家的当前联盟并更新 store */
-  const refreshMyAlliance = useCallback(async () => {
-    if (!ct.alliance) return;
-    const addr = await getAddress();
-    // 交易刚确认后 RPC 读节点可能尚未同步，最多重试 3 次
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * attempt));
-        const allianceId: string = await ct.alliance.playerAlliance(addr);
-        if (allianceId && allianceId !== '0x' + '00'.repeat(32)) {
-          const raw = await ct.alliance.alliances(allianceId);
-          useGameStore.setState({
-            currentAlliance: {
-              id: allianceId,
-              name: String(raw.name ?? ''),
-              memberCount: Number(raw.memberCount ?? raw[3] ?? 0),
-              level: Number(raw.level ?? raw[2] ?? 1),
-            },
-          });
-        } else {
-          useGameStore.setState({ currentAlliance: null });
-        }
-        return; // 成功即退出
-      } catch (e) {
-        if (attempt === 2) console.warn('[refreshMyAlliance] failed after 3 retries:', e);
-      }
-    }
-  }, [ct]);
-
   const createAlliance = useCallback(async (name: string) => {
     if (!name.trim()) return;
     useGameStore.setState({ loading: true, error: null });
@@ -516,7 +526,6 @@ export function useGameActions() {
       requireContract(ct.alliance, 'Alliance');
       const tx = await ct.alliance!.createAlliance(name.trim());
       await tx.wait();
-      await refreshMyAlliance();
       useGameStore.getState().addSuccessToast(t('toast.alliance_created'));
     } catch (e) {
       useGameStore.getState().addErrorToast(t('toast.alliance_create_failed', { msg: errMsg(e) }));
@@ -530,15 +539,14 @@ export function useGameActions() {
     useGameStore.setState({ loading: true, error: null });
     try {
       requireContract(ct.alliance, 'Alliance');
-      requireContract(ct.dftToken, 'DFT Token');
+      requireContract(ct.sesToken, 'SES Token');
       const tx = await ct.alliance!.claimRefund();
       await tx.wait();
       const addr = await getAddress();
       useGameStore.setState({
-        dftBalance: formatBalance(await ct.dftToken!.balanceOf(addr)),
+        sesBalance: formatBalance(await ct.sesToken!.balanceOf(addr)),
         pendingRefund: 0,
       });
-      await refreshMyAlliance();
       useGameStore.getState().addSuccessToast(t('toast.refund_claimed'));
     } catch (e) {
       useGameStore.getState().addErrorToast(t('toast.refund_failed', { msg: errMsg(e) }));
@@ -554,7 +562,6 @@ export function useGameActions() {
       requireContract(ct.alliance, 'Alliance');
       const tx = await ct.alliance!.joinAlliance(allianceId);
       await tx.wait();
-      await refreshMyAlliance();
       useGameStore.getState().addSuccessToast(t('toast.alliance_joined'));
     } catch (e) {
       useGameStore.getState().addErrorToast(t('toast.alliance_join_failed', { msg: errMsg(e) }));
@@ -570,7 +577,7 @@ export function useGameActions() {
       requireContract(ct.alliance, 'Alliance');
       const tx = await ct.alliance!.leaveAlliance(allianceId);
       await tx.wait();
-      await refreshMyAlliance();
+      useGameStore.setState({ currentAlliance: null });
       useGameStore.getState().addSuccessToast(t('toast.alliance_left'));
     } catch (e) {
       useGameStore.getState().addErrorToast(t('toast.alliance_leave_failed', { msg: errMsg(e) }));
@@ -614,10 +621,9 @@ export function useGameActions() {
   const donateToTotem = useCallback(async (allianceId: string, amount: number) => {
     useGameStore.setState({ loading: true, error: null });
     try {
-      requireContract(ct.darkForest, 'DarkForest');
-      const tx = await ct.darkForest!.donateToTotem(allianceId, amount);
+      requireContract(ct.game, 'SilentExpanseStrife');
+      const tx = await ct.game!.donateToTotem(allianceId, amount);
       await tx.wait();
-      await refreshMyAlliance();
       useGameStore.getState().addSuccessToast(t('toast.donate_success'));
     } catch (e) {
       useGameStore.getState().addErrorToast(t('toast.donate_failed', { msg: errMsg(e) }));
@@ -630,10 +636,9 @@ export function useGameActions() {
   const upgradeTotem = useCallback(async (allianceId: string) => {
     useGameStore.setState({ loading: true, error: null });
     try {
-      requireContract(ct.darkForest, 'DarkForest');
-      const tx = await ct.darkForest!.upgradeTotem(allianceId);
+      requireContract(ct.game, 'SilentExpanseStrife');
+      const tx = await ct.game!.upgradeTotem(allianceId);
       await tx.wait();
-      await refreshMyAlliance();
       useGameStore.getState().addSuccessToast(t('toast.totem_upgrade_success'));
     } catch (e) {
       useGameStore.getState().addErrorToast(t('toast.totem_upgrade_failed', { msg: errMsg(e) }));
@@ -652,17 +657,17 @@ export function useGameActions() {
      ══════════════════════════════════════════════ */
 
   /* ─── 17. 创建挂单卖出能量 ─── */
-  const createEnergyOrder = useCallback(async (energyAmount: number, dftPrice: number) => {
+  const createEnergyOrder = useCallback(async (energyAmount: number, sesPrice: number) => {
     useGameStore.setState({ loading: true, error: null });
     try {
       requireContract(ct.signer, 'Signer');
       if (!GAME.ENERGY_MARKET) throw new Error('ENERGY_MARKET address not configured');
       const market = new Contract(GAME.ENERGY_MARKET, ENERGY_MARKET_ABI, ct.signer);
-      const tx = await market.createOrder(energyAmount, parseEther(String(dftPrice)));
+      const tx = await market.createOrder(energyAmount, parseEther(String(sesPrice)));
       await tx.wait();
-      if (ct.darkForest) {
+      if (ct.game) {
         const addr = await getAddress();
-        const civ = await ct.darkForest.getCivilization(addr);
+        const civ = await ct.game.getCivilization(addr);
         useGameStore.setState({ playerCiv: { ...useGameStore.getState().playerCiv!, energy: Number(civ.energy ?? civ[2] ?? 0) } as never });
       }
       useGameStore.getState().addSuccessToast(t('toast.order_created'));
@@ -673,14 +678,45 @@ export function useGameActions() {
     }
   }, [ct]);
 
-  /* ─── 18. 吃单买入能量 ─── */
-  const fillEnergyOrder = useCallback(async (orderId: number, maxPrice: number) => {
+  /* ─── 18. 吃单买入能量 ───
+   *     TODO: 调用者需传入 orderId, energyAmount (要买的能量数量), maxUnitPriceWei (最高单价 wei)
+   *     如果 maxUnitPriceWei 传 0，则从订单自动计算单价并上浮 10% 作为最高价。
+   */
+  const fillEnergyOrder = useCallback(async (orderId: number, energyAmount: number, maxUnitPriceWei?: bigint) => {
     useGameStore.setState({ loading: true, error: null });
     try {
       requireContract(ct.signer, 'Signer');
+      requireContract(ct.sesToken, 'SES Token');
       const market = new Contract(GAME.ENERGY_MARKET!, ENERGY_MARKET_ABI, ct.signer);
-      const tx = await market.fillOrder(orderId, parseEther(String(maxPrice)));
+
+      // 读取订单信息以计算精确单价
+      const order = await market.orders(orderId);
+      if (order.remaining === 0n) throw new Error('Order already filled');
+      const unitPrice = BigInt(order.sesPrice) / BigInt(order.energyAmount);  // integer division, 匹配合约 _unitPrice
+      const maxUnitPrice = maxUnitPriceWei ?? (unitPrice * 110n / 100n);  // 默认上浮 10%
+
+      // 计算需要支付的 SES（fillOrder 会从买家 transferFrom）
+      const requiredSes = BigInt(energyAmount) * order.sesPrice / order.energyAmount;
+
+      // 确保 SES 授权额度足够
+      const addr = await getAddress();
+      const allowance = await ct.sesToken!.allowance(addr, GAME.ENERGY_MARKET!);
+      if (allowance < requiredSes) {
+        const approveTx = await ct.sesToken!.approve(GAME.ENERGY_MARKET!, MaxUint256);
+        await approveTx.wait();
+      }
+
+      const tx = await market.fillOrder(orderId, energyAmount, maxUnitPrice);
       await tx.wait();
+
+      // 刷新玩家能量和 SES 余额
+      if (ct.game) {
+        const civ = await ct.game.getCivilization(addr);
+        useGameStore.setState({
+          playerCiv: { ...useGameStore.getState().playerCiv!, energy: Number(civ.energy ?? 0) } as never,
+          sesBalance: formatBalance(await ct.sesToken!.balanceOf(addr)),
+        });
+      }
       useGameStore.getState().addSuccessToast(t('toast.order_filled'));
     } catch (e) {
       useGameStore.getState().addErrorToast(t('toast.order_fill_failed', { msg: errMsg(e) }));
@@ -712,7 +748,8 @@ export function useGameActions() {
     attackTarget,
     collectEnergy,
     claimCombatEnergy,
-    claimDailyDFT,
+    claimDailySES,
+    distribute: distributeAction,
     startMove,
     spaceJump,
     rebuildCivilization: rebuildCivilizationAction,
@@ -758,8 +795,12 @@ interface CivTuple {
   [index: number]: unknown;
 }
 
-/** Parse getCivilization() raw tuple into civilized store shape */
+/** Parse getCivilization() raw tuple into civilized store shape.
+ *  maxShieldHP 直接从 shieldLv 计算（与合约 _calcShieldHP 一致），
+ *  避免额外的 RPC 调用。shieldHP 需要在有独立 RPC 时另行填充。
+ */
 export function civFromRaw(raw: any) {
+  const shieldLv = Number(raw.shieldLv ?? 1);
   return {
     name: String(raw.name ?? ''),
     x: Number(raw.x ?? raw.location?.x ?? 0),
@@ -767,12 +808,13 @@ export function civFromRaw(raw: any) {
     z: Number(raw.z ?? raw.location?.z ?? 0),
     energy: Number(raw.energy ?? 0),
     health: Number(raw.health ?? 0),
-    shieldHP: 0,
-    maxShieldHP: 0,
+    shieldHP: Number(raw.shieldHP ?? 0),
+    // 与合约 _calcShieldHP(): SHIELD_HP_BASE + SHIELD_HP_RATE * lv² 一致
+    maxShieldHP: GAME.SHIELD_HP_BASE + GAME.SHIELD_HP_RATE * shieldLv * shieldLv,
     energyCollectorLv: Number(raw.energyCollectorLv ?? 1),
     weaponLv: Number(raw.weaponLv ?? 1),
     radarLv: Number(raw.radarLv ?? 1),
-    shieldLv: Number(raw.shieldLv ?? 1),
+    shieldLv,
     engineLv: Number(raw.engineLv ?? 1),
     scanRange: Number(raw.scanRange ?? 1000),
     isRuins: Boolean(raw.isRuins ?? false),

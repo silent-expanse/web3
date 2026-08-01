@@ -5,6 +5,7 @@ import { useGameStore } from '../hooks/useGameStore';
 import { useContract } from '../hooks/useContract';
 import { THEME } from '../theme';
 import { useI18n } from '../hooks/useI18n';
+import { fmt } from '../utils/format';
 
 const Panel = styled.div`
   background: ${THEME.card};
@@ -73,10 +74,10 @@ export function Leaderboard() {
   const { data: players, isFetching } = useQuery({
     queryKey: ['leaderboard'],
     queryFn: async (): Promise<SimplePlayer[]> => {
-      if (!ct.darkForest) throw new Error('Contract not available');
-      const [addrs] = await ct.darkForest.getPlayers(0, 50);
+      if (!ct.game) throw new Error('Contract not available');
+      const [addrs] = await ct.game.getPlayers(0, 50);
       if (!addrs || addrs.length === 0) return [];
-      const statuses = await ct.darkForest.getSimpleStatuses(addrs);
+      const statuses = await ct.game.getSimpleStatuses(addrs);
       return (statuses as any[]).map(s => ({
         player: String(s.player ?? ''),
         energy: Number(s.energy ?? 0),
@@ -92,7 +93,7 @@ export function Leaderboard() {
         isRuins: Boolean(s.isRuins ?? s[11] ?? false),
       })).filter(p => p.exists && !p.isRuins);
     },
-    enabled: !!ct.darkForest,
+    enabled: !!ct.game,
     refetchInterval: 30_000,
   });
 
@@ -154,7 +155,7 @@ export function Leaderboard() {
               {isYou ? '⭐ ' : ''}{p.player.slice(0, 6)}...{p.player.slice(-4)}
             </Name>
             <Info>{t('leaderboard.player_level', { lv: avgLevel })}</Info>
-            <Score>{p.energy.toLocaleString()}</Score>
+            <Score>{fmt(p.energy)}</Score>
           </Row>
         );
       })}

@@ -1,8 +1,16 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      // bun workspace 不创建 node_modules symlink，手动映射 shared 包
+      '@strifelabs-strife/shared/contracts': fileURLToPath(new URL('../shared/contracts.ts', import.meta.url)),
+      '@strifelabs-strife/shared/contracts.json': fileURLToPath(new URL('../shared/contracts.json', import.meta.url)),
+    },
+  },
   customLogger: {
     warn(msg, _options) {
       if (typeof msg === 'string' && msg.includes('/*#__PURE__*/')) return;

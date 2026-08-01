@@ -131,6 +131,25 @@
   },
   {
     "type": "function",
+    "name": "allianceIndex",
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "allianceList",
     "inputs": [
       {
@@ -282,19 +301,6 @@
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "dftToken",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IERC20"
-      }
-    ],
-    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -738,10 +744,23 @@
   },
   {
     "type": "function",
-    "name": "setDFTToken",
+    "name": "sesToken",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IERC20"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "setGameContract",
     "inputs": [
       {
-        "name": "_tokenAddress",
+        "name": "_gameContract",
         "type": "address",
         "internalType": "address"
       }
@@ -751,10 +770,10 @@
   },
   {
     "type": "function",
-    "name": "setGameContract",
+    "name": "setSESToken",
     "inputs": [
       {
-        "name": "_gameContract",
+        "name": "_tokenAddress",
         "type": "address",
         "internalType": "address"
       }
@@ -852,19 +871,6 @@
   },
   {
     "type": "event",
-    "name": "DFTTokenSet",
-    "inputs": [
-      {
-        "name": "token",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
     "name": "MemberJoined",
     "inputs": [
       {
@@ -940,6 +946,19 @@
   },
   {
     "type": "event",
+    "name": "SESTokenSet",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "TotemDonated",
     "inputs": [
       {
@@ -990,82 +1009,82 @@
   },
   {
     "type": "error",
-    "name": "DFA_AlreadyExists",
+    "name": "AL_AlreadyExists",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "DFA_AlreadyInAlliance",
+    "name": "AL_AlreadyInAlliance",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "DFA_CannotKickSelf",
+    "name": "AL_CannotKickSelf",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "DFA_Full",
+    "name": "AL_Full",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "DFA_InvalidName",
+    "name": "AL_InvalidName",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "DFA_LastMember",
+    "name": "AL_LastMember",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "DFA_NoRefund",
+    "name": "AL_NoRefund",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "DFA_NotAuthorized",
+    "name": "AL_NotAuthorized",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "DFA_NotEnoughDonations",
+    "name": "AL_NotEnoughDonations",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "DFA_NotEnoughEnergy",
+    "name": "AL_NotEnoughEnergy",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "DFA_NotFound",
+    "name": "AL_NotFound",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "DFA_NotLeader",
+    "name": "AL_NotLeader",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "DFA_NotMember",
+    "name": "AL_NotMember",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "DFA_TokenNotSet",
+    "name": "AL_TokenNotSet",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "DFA_UseClaimRefund",
+    "name": "AL_UseClaimRefund",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "DFA_ZeroAddress",
+    "name": "AL_ZeroAddress",
     "inputs": []
   },
   {

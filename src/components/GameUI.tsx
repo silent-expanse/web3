@@ -18,6 +18,7 @@ import { MobilePanel } from './MobilePanel';
 import { ToastContainer } from './Toast';
 import { useI18n } from '../hooks/useI18n';
 import { THEME } from '../theme';
+import { fmt, fmtCompact } from '../utils/format';
 
 /* ─── Types ─── */
 type PageId = 'overview' | 'actions' | 'combat' | 'tech' | 'alliance' | 'market' | 'leaderboard';
@@ -269,13 +270,13 @@ function DesktopLayout() {
   const [page, setPage] = useState<PageId>('overview');
   const playerCiv = useGameStore(s => s.playerCiv);
   const address = useGameStore(s => s.address);
-  const dft = useGameStore(s => s.dftBalance);
+  const ses = useGameStore(s => s.sesBalance);
   const loading = useGameStore(s => s.loading);
   const epochClaimed = useGameStore(s => s.epochClaimed);
   const { t, toggleLang } = useI18n();
-  const { claimDailyDFT } = useGameActions();
+  const { claimDailySES } = useGameActions();
 
-  const dftClaimDisabled = loading || epochClaimed;
+  const sesClaimDisabled = loading || epochClaimed;
 
   if (!playerCiv) {
     return (
@@ -322,13 +323,13 @@ function DesktopLayout() {
         <ConnectButton />
 
         <Pill $color={THEME.accent.gold}>
-          <PillLabel>DFT</PillLabel>
-          <PillValue $color={THEME.accent.gold}>{parseFloat(dft) > 1e9 ? (parseFloat(dft) / 1e9).toFixed(2) + 'B' : parseFloat(dft).toFixed(1)}</PillValue>
+          <PillLabel>SES</PillLabel>
+          <PillValue $color={THEME.accent.gold}>{fmtCompact(ses)}</PillValue>
         </Pill>
 
         <Pill $color={THEME.accent.green}>
           <PillLabel>⚡</PillLabel>
-          <PillValue $color={THEME.accent.green}>{playerCiv.energy.toLocaleString()}</PillValue>
+          <PillValue $color={THEME.accent.green}>{fmt(playerCiv.energy)}</PillValue>
         </Pill>
 
         <Pill $color="#44ff88">
@@ -338,7 +339,7 @@ function DesktopLayout() {
 
         <Pill $color={THEME.accent.red}>
           <PillLabel>❤️</PillLabel>
-          <PillValue $color={THEME.accent.red}>{playerCiv.health.toLocaleString()}</PillValue>
+          <PillValue $color={THEME.accent.red}>{fmt(playerCiv.health)}</PillValue>
         </Pill>
 
         <Pill $color={THEME.accent.shield}>
@@ -346,10 +347,10 @@ function DesktopLayout() {
           <PillValue $color={THEME.accent.shield}>{shieldPct}%</PillValue>
         </Pill>
 
-        <DailyClaimBtn $canClaim={!epochClaimed} onClick={() => !dftClaimDisabled && claimDailyDFT()} disabled={dftClaimDisabled}>
-          {epochClaimed ? t('dft.claimed') : t('dft.claim')}
+        <DailyClaimBtn $canClaim={!epochClaimed} onClick={() => !sesClaimDisabled && claimDailySES()} disabled={sesClaimDisabled}>
+          {epochClaimed ? t('ses.claimed') : t('ses.claim')}
         </DailyClaimBtn>
-        <TopBarLink href="https://docs.darkforest.uk" target="_blank">{t('connect.tutorial')}</TopBarLink>
+        <TopBarLink href="https://docs.strifelabs.com" target="_blank">{t('connect.tutorial')}</TopBarLink>
         <TopBarLangBtn onClick={toggleLang}>{t('connect.lang_switch')}</TopBarLangBtn>
       </TopBar>
 
@@ -375,9 +376,45 @@ function DesktopLayout() {
       </MainArea>
 
       <ToastContainer />
+
+      {/* ── Lore footer quote ── */}
+      <LoreFooter>
+        <LoreFooterText>{t('lore.footer_quote')}</LoreFooterText>
+        <LoreFooterEpoch>
+          {t('lore.epoch_label')} #{'—'} · {t('lore.engine_status')}
+        </LoreFooterEpoch>
+      </LoreFooter>
     </DashboardContainer>
   );
 }
+
+/* ─── Lore footer styled components ─── */
+const LoreFooter = styled.div`
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 16px;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
+  background: ${THEME.alpha(THEME.card, 0.6)};
+  border-top: 1px solid ${THEME.alpha(THEME.accent.green, 0.08)};
+  min-height: 28px;
+`;
+
+const LoreFooterText = styled.span`
+  color: ${THEME.alpha(THEME.text.secondary, 0.5)};
+  font-size: 0.6rem;
+  font-family: 'Courier New', monospace;
+  font-style: italic;
+`;
+
+const LoreFooterEpoch = styled.span`
+  color: ${THEME.alpha(THEME.accent.green, 0.35)};
+  font-size: 0.55rem;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 1px;
+  white-space: nowrap;
+`;
 
 /* ════════════════════════════════════════════
    Mobile Layout (adapted from original but without 3D)
@@ -387,7 +424,7 @@ function MobileLayout() {
   const connected = useGameStore(s => s.connected);
   const playerCiv = useGameStore(s => s.playerCiv);
   const address = useGameStore(s => s.address);
-  const dft = useGameStore(s => s.dftBalance);
+  const ses = useGameStore(s => s.sesBalance);
   const target = useGameStore(s => s.selectedTarget);
   const battleLog = useGameStore(s => s.battleLog);
   const alliance = useGameStore(s => s.currentAlliance);
@@ -420,20 +457,20 @@ function MobileLayout() {
           <MobileHudRow>
             <MiniName>{playerCiv.name}</MiniName>
             <MiniCard $color={THEME.accent.gold}>
-              <MiniLabel>DFT</MiniLabel>
-              <MiniValue $color={THEME.accent.gold}>{parseFloat(dft) > 1e9 ? (parseFloat(dft) / 1e9).toFixed(2) + 'B' : parseFloat(dft).toFixed(1)}</MiniValue>
+              <MiniLabel>SES</MiniLabel>
+              <MiniValue $color={THEME.accent.gold}>{fmtCompact(ses)}</MiniValue>
             </MiniCard>
             <MiniCard>
               <MiniLabel>⚡</MiniLabel>
-              <MiniValue>{playerCiv.energy.toLocaleString()}</MiniValue>
+              <MiniValue>{fmt(playerCiv.energy)}</MiniValue>
             </MiniCard>
             <MiniCard $color="#44ff88">
               <MiniLabel>⚡/s</MiniLabel>
-              <MiniValue $color="#44ff88">{calcCollectRate(playerCiv.energyCollectorLv)}</MiniValue>
+              <MiniValue $color="#44ff88">{fmt(calcCollectRate(playerCiv.energyCollectorLv), 2)}</MiniValue>
             </MiniCard>
             <MiniCard $color="#ff8844">
               <MiniLabel>❤️</MiniLabel>
-              <MiniValue $color="#ff8844">{playerCiv.health.toLocaleString()}</MiniValue>
+              <MiniValue $color="#ff8844">{fmt(playerCiv.health)}</MiniValue>
             </MiniCard>
             <MiniCard $color={THEME.accent.shield}>
               <MiniLabel>🛡</MiniLabel>
@@ -517,6 +554,14 @@ function MobileLayout() {
       </MobilePanel>
 
       <MobileNav activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* ── Lore footer quote ── */}
+      <LoreFooter>
+        <LoreFooterText>{t('lore.footer_quote')}</LoreFooterText>
+        <LoreFooterEpoch>
+          {t('lore.epoch_label')} #{'—'} · {t('lore.engine_status')}
+        </LoreFooterEpoch>
+      </LoreFooter>
     </MobileContainer>
   );
 }

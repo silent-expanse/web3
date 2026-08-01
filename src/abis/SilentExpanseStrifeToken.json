@@ -828,26 +828,6 @@
   },
   {
     "type": "error",
-    "name": "DFT_CapExceeded",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "DFT_NotAuthorized",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "DFT_ZeroAddress",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "DFT_ZeroAmount",
-    "inputs": []
-  },
-  {
-    "type": "error",
     "name": "ERC20InsufficientAllowance",
     "inputs": [
       {
@@ -957,6 +937,26 @@
   {
     "type": "error",
     "name": "ReentrancyGuardReentrantCall",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SES_CapExceeded",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SES_NotAuthorized",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SES_ZeroAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SES_ZeroAmount",
     "inputs": []
   }
 ]

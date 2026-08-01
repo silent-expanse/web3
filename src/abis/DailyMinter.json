@@ -3,7 +3,7 @@
     "type": "constructor",
     "inputs": [
       {
-        "name": "_dftToken",
+        "name": "_sesToken",
         "type": "address",
         "internalType": "address"
       },
@@ -19,6 +19,10 @@
       }
     ],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "receive",
+    "stateMutability": "payable"
   },
   {
     "type": "function",
@@ -62,19 +66,6 @@
         "name": "",
         "type": "uint256",
         "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "dftToken",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract DarkForestToken"
       }
     ],
     "stateMutability": "view"
@@ -262,10 +253,10 @@
   },
   {
     "type": "function",
-    "name": "setDFTToken",
+    "name": "rescueEth",
     "inputs": [
       {
-        "name": "_newTokenAddress",
+        "name": "to",
         "type": "address",
         "internalType": "address"
       }
@@ -275,10 +266,36 @@
   },
   {
     "type": "function",
+    "name": "sesToken",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract SilentExpanseStrifeToken"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "setGameContract",
     "inputs": [
       {
         "name": "_gameAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setSESToken",
+    "inputs": [
+      {
+        "name": "_newTokenAddress",
         "type": "address",
         "internalType": "address"
       }
@@ -391,7 +408,17 @@
   },
   {
     "type": "error",
+    "name": "DM_EthNotAccepted",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "DM_NoActivePlayers",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "DM_NoEthToRescue",
     "inputs": []
   },
   {

@@ -1,5 +1,10 @@
 // Game constants — verified against BSC mainnet contract (chain 56)
-// Source: DarkForestStorage.sol constants
+// Source: SilentExpanseStrifeStorage.sol constants
+//
+// 合约地址来源: packages/shared/contracts.json (单一权威)
+// 覆盖方式: VITE_* 环境变量
+import { getContractAddress } from '@strifelabs-strife/shared/contracts';
+
 export const GAME = {
   // ── Civ creation ──
   INITIAL_ENERGY: 2000,
@@ -20,7 +25,7 @@ export const GAME = {
   DEF_RATE: 6,                // per sqrt(lv-1)
   ATTACK_ENERGY_BASE: 50000,  // base energy cost per attack
   ATTACK_ENERGY_PER_LV: 50000,// extra cost per weapon level
-  PLUNDER_RATIO: 500,         // bps (500 = 50%)
+  PLUNDER_RATIO: 500,         // bps (500 = 5%, 匹配合约 PLUNDER_RATIO + weaponLv * 50)
   LAST_HIT_BONUS_PERCENT: 50, // extra damage %
   DOWNGRADE_DIVISOR: 10,      // energy drain divisor on defeat
   SHIELD_DMG_BONUS: 200,      // % bonus damage vs shield
@@ -30,7 +35,7 @@ export const GAME = {
   SHIELD_HP_RATE: 15,         // per sqrt(lv-1)
   REGEN_BASE: 50,             // base regen per tick
   REGEN_RATE: 1,              // per level
-  SHIELD_REGEN_ENERGY_RATIO: 10, // 1/10 of energy spent → shield regen
+  SHIELD_REGEN_ENERGY_RATIO: 1,  // 1:1 energy:shield regen (匹配合约 SHIELD_REGEN_ENERGY_RATIO = 1)
 
   // ── Durability (per system type) ──
   WEAPON_DUR_BASE: 60,
@@ -54,9 +59,9 @@ export const GAME = {
   JUMP_ENERGY_BASE: 200000,
   JUMP_ENERGY_MAX: 16500000,
   JUMP_ENERGY_PER_SQRT: 200000,
-  JUMP_DFT_BASE: 10,           // DFT (in whole units)
-  JUMP_DFT_MAX: 1000,
-  JUMP_DFT_PER_SQRT: 10,
+  JUMP_SES_BASE: 10,           // SES (in whole units)
+  JUMP_SES_MAX: 1000,
+  JUMP_SES_PER_SQRT: 10,
   JUMP_TRACKING_RADAR_LV: 20,
 
   // ── Attack tokens ──
@@ -70,19 +75,19 @@ export const GAME = {
   // ── Upkeep & repair ──
   UPKEEP_PER_LEVEL: 2000,      // energy per level per upkeep tick
   REPAIR_COST_PER_SEC: 1,      // energy per durability second repaired
-  SHIELD_REPAIR_COST: 4,       // energy per shield HP repaired
-  WEAPON_REPAIR_COST: 3,
-  ENGINE_REPAIR_COST: 3,
+  SHIELD_REPAIR_COST: 4,       // 匹配合约 SHIELD_REPAIR_COST
+  WEAPON_REPAIR_COST: 3,       // 匹配合约 WEAPON_REPAIR_COST
+  ENGINE_REPAIR_COST: 5,       // 匹配合约 ENGINE_REPAIR_COST
   REBUILD_ENERGY_COST: 500000,
 
   // ── Referral ──
   REFERRAL_ENERGY_REWARD: 150,
 
-  // ── DFT token ──
-  DFT_DECIMALS: 18,
-  DAILY_DFT_BASE: 23050,       // approx DFT per day base
-  DAILY_DFT_EMISSION: 1152575342, // total daily DFT emission
-  DFT_GROWTH_BPS: 5000,        // 50% growth per level
+  // ── SES token ──
+  SES_DECIMALS: 18,
+  DAILY_SES_BASE: 23050,       // approx SES per day base
+  DAILY_SES_EMISSION: 1152575342, // total daily SES emission
+  SES_GROWTH_BPS: 5000,        // 50% growth per level
 
   // ── Anchor formula ──
   ANCHOR_BASE_BPS: 10000,      // 100%
@@ -97,19 +102,14 @@ export const GAME = {
   FEE_RAMP_UP_TIME: 31536000,           // 1 year
   ORDER_DELAY_SEC: 3,
 
-  // ── BSC Mainnet (chain 56) — 最终部署 ──
-  DARK_FOREST: (typeof import.meta !== 'undefined' && (import.meta as { env?: Record<string, string> }).env?.VITE_DARK_FOREST)
-    || '0x96ee7c1a3cd81858a6638917de2a1efd691ae2fe',
-  DFT_TOKEN: (typeof import.meta !== 'undefined' && (import.meta as { env?: Record<string, string> }).env?.VITE_DFT_TOKEN)
-    || '0x1266e922fe34459efda34e7ee5caf327fbf138d7',
-  ALLIANCE: (typeof import.meta !== 'undefined' && (import.meta as { env?: Record<string, string> }).env?.VITE_ALLIANCE)
-    || '0x5f810a22359b678c01e72726149d387e79cd03f2',
-  ENERGY_MARKET: (typeof import.meta !== 'undefined' && (import.meta as { env?: Record<string, string> }).env?.VITE_ENERGY_MARKET)
-    || '0x69f8dad1b4c9ceaf00bc48ed2216931ba78c5955',
-  DAILY_MINTER: (typeof import.meta !== 'undefined' && (import.meta as { env?: Record<string, string> }).env?.VITE_DAILY_MINTER)
-    || '0x9b1c4e550fbf1c802495e6521ee5812e4264c95f',
-  AGENT_REGISTRY: (typeof import.meta !== 'undefined' && (import.meta as { env?: Record<string, string> }).env?.VITE_AGENT_REGISTRY)
-    || '0x98233227e91829f7c424099f5d3bc86cf4d57f55',
+  // ── 合约地址 (单一来源: packages/shared/contracts.json) ──
+  // 可通过 VITE_SILENT_EXPANSE, VITE_SES_TOKEN 等环境变量覆盖
+  SILENT_EXPANSE: getContractAddress('SilentExpanseStrife'),
+  SES_TOKEN: getContractAddress('SES'),
+  ALLIANCE: getContractAddress('Alliance'),
+  ENERGY_MARKET: getContractAddress('EnergyMarket'),
+  DAILY_MINTER: getContractAddress('DailyMinter'),
+  AGENT_REGISTRY: getContractAddress('AgentRegistry'),
   CHAIN_ID: Number((typeof import.meta !== 'undefined' && (import.meta as { env?: Record<string, string> }).env?.VITE_CHAIN_ID) || 56),
 } as const;
 

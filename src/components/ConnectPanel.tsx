@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import styled, { keyframes } from 'styled-components';
-import { formatEther } from 'ethers';
+import { formatEther, isAddress } from 'ethers';
 import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useGameStore } from '../hooks/useGameStore';
@@ -13,6 +13,11 @@ import { THEME } from '../theme';
 const float = keyframes`
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-10px); }
+`;
+
+const pulse = keyframes`
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
 `;
 
 const Overlay = styled.div`
@@ -51,6 +56,51 @@ const Subtitle = styled.p<{ $mobile: boolean }>`
   letter-spacing: ${({ $mobile }) => ($mobile ? '3px' : '6px')};
   margin-bottom: 24px;
   text-align: center;
+`;
+
+/* ─── Lore narrative ─── */
+const LoreSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 20px;
+  max-width: 520px;
+  text-align: center;
+`;
+
+const LoreEngineTitle = styled.div`
+  color: ${THEME.alpha(THEME.accent.green, 0.6)};
+  font-size: 0.7rem;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  animation: ${pulse} 2s ease-in-out infinite;
+`;
+
+const LoreLine = styled.div`
+  color: ${THEME.alpha(THEME.text.primary, 0.85)};
+  font-size: 1rem;
+  font-family: 'Courier New', monospace;
+  line-height: 1.6;
+`;
+
+const LoreProtocol = styled.div`
+  color: ${THEME.alpha(THEME.text.secondary, 0.7)};
+  font-size: 0.75rem;
+  font-family: 'Courier New', monospace;
+  line-height: 1.5;
+  margin-top: 4px;
+  max-width: 440px;
+  white-space: pre-line;
+`;
+
+const LoreDivider = styled.div`
+  width: 60px;
+  height: 1px;
+  background: ${THEME.alpha(THEME.accent.green, 0.3)};
+  margin: 8px 0 12px;
 `;
 
 const ActionButton = styled.button<{ $mobile: boolean }>`
@@ -187,7 +237,7 @@ const TutorialLink = styled.a`
 
 const RainbowWrapper = styled.div`
   margin-bottom: 24px;
-  /* Override RainbowKit button to match Dark Forest theme */
+  /* Override RainbowKit button to match Silent Expanse: Strife theme */
   [data-rk] button {
     font-family: 'Courier New', monospace !important;
   }
@@ -217,17 +267,22 @@ export function ConnectPanel() {
     ? wagmiAddress.slice(0, 4) + '...' + wagmiAddress.slice(-4)
     : '';
 
-  /* ── 文明检查 ── */
+  /* ── 钱包/账户切换检测 ── */
   const prevConnected = useRef(false);
+  const prevAddress = useRef(wagmiAddress);
   useEffect(() => {
-    // on disconnect → clear store
-    if (prevConnected.current && !wagmiConnected) {
+    // 账户切换：断开后重新连了不同的钱包，或者同一个钱包切了账户
+    const addressChanged = prevAddress.current && wagmiAddress && prevAddress.current !== wagmiAddress;
+    const justDisconnected = prevConnected.current && !wagmiConnected;
+
+    if (justDisconnected || addressChanged) {
       useGameStore.getState().setDisconnected();
     }
     prevConnected.current = wagmiConnected;
+    prevAddress.current = wagmiAddress;
 
     if (!wagmiConnected || !wagmiAddress) return;
-    if (!ct.isReady || ct.isSimulated || !ct.darkForest || !ct.dftToken) return;
+    if (!ct.isReady || ct.isSimulated || !ct.game || !ct.sesToken) return;
 
     let cancelled = false;
     setCheckingCiv(true);
@@ -235,7 +290,7 @@ export function ConnectPanel() {
     async function check() {
       let raw;
       try {
-        raw = await ct.darkForest!.getCivilization(wagmiAddress!);
+        raw = await ct.game!.getCivilization(wagmiAddress!);
       } catch {
         if (!cancelled) setCheckingCiv(false);
         return;
@@ -252,11 +307,11 @@ export function ConnectPanel() {
         });
 
         Promise.all([
-          ct.dftToken!.balanceOf(wagmiAddress!),
-          ct.darkForest!.getEntryFee(),
+          ct.sesToken!.balanceOf(wagmiAddress!),
+          ct.game!.getEntryFee(),
         ]).then(async ([balanceRaw, feeWei]) => {
           useGameStore.setState({
-            dftBalance: (parseFloat(formatEther(balanceRaw))).toFixed(2),
+            sesBalance: (parseFloat(formatEther(balanceRaw))).toFixed(2),
             entryFee: formatEther(feeWei),
           });
         }).catch(() => {});
@@ -284,7 +339,8 @@ export function ConnectPanel() {
     if (name.length > 32) { setError(t('connect.name_too_long')); return; }
     if (!wagmiAddress) { setError(t('connect.wallet_required')); return; }
 
-    if (referrer.trim() && !/^0x[0-9a-fA-F]{40}$/.test(referrer.trim())) {
+    const ref = referrer.trim();
+    if (ref && !isAddress(ref)) {
       setError(t('connect.bad_referrer'));
       return;
     }
@@ -292,7 +348,7 @@ export function ConnectPanel() {
     setCreating(true);
     setError(null);
 
-    const ok = await createCivilization(name.trim(), referrer.trim() || undefined);
+    const ok = await createCivilization(name.trim(), ref || undefined);
     if (!ok) setCreating(false);
   };
 
@@ -304,6 +360,14 @@ export function ConnectPanel() {
 
   return (
     <Overlay>
+      <LoreSection>
+        <LoreEngineTitle>◈ {t('lore.splash_title')} ◈</LoreEngineTitle>
+        <LoreLine>{t('lore.splash_line1')}</LoreLine>
+        <LoreLine>{t('lore.splash_line2')}</LoreLine>
+        <LoreDivider />
+        <LoreProtocol>{t('lore.protocol_intro')}</LoreProtocol>
+      </LoreSection>
+
       <Title $mobile={isMobile}>{t('connect.title')}</Title>
       <Subtitle $mobile={isMobile}>{t('connect.subtitle')}</Subtitle>
       <FeeDisplay $mobile={isMobile}>
@@ -361,7 +425,7 @@ export function ConnectPanel() {
 
       <FooterRow>
         <LangBtn onClick={toggleLang}>{t('connect.lang_switch')}</LangBtn>
-        <TutorialLink href="https://docs.darkforest.uk" target="_blank" rel="noopener noreferrer">
+        <TutorialLink href="https://docs.strifelabs.com" target="_blank" rel="noopener noreferrer">
           {t('connect.tutorial')}
         </TutorialLink>
       </FooterRow>

@@ -11,6 +11,7 @@ import { TxConfirm } from './ui/TxConfirm';
 import { LoadingOverlay } from './Spinner';
 import { THEME } from '../theme';
 import { useI18n } from '../hooks/useI18n';
+import { fmt, fmtCompact } from '../utils/format';
 
 /* ─── Layout ─── */
 
@@ -109,7 +110,7 @@ export function HUD() {
   const { t } = useI18n();
   const civ = useGameStore(s => s.playerCiv);
   const addr = useGameStore(s => s.address);
-  const dft = useGameStore(s => s.dftBalance);
+  const ses = useGameStore(s => s.sesBalance);
   const pending = useGameStore(s => s.pendingEnergy);
   const tokens = useGameStore(s => s.attackTokens);
   const target = useGameStore(s => s.selectedTarget);
@@ -135,7 +136,7 @@ export function HUD() {
   const rate = calcCollectRate(civ.energyCollectorLv);
   const atk = calcAttackPower(civ.weaponLv);
   const defVal = calcShieldDefense(civ.shieldLv);
-  const dftNum = parseFloat(dft);
+  const sesNum = parseFloat(ses);
   const isDestroyed = useGameStore(s => s.isDestroyed);
   const collectorDur = useGameStore(s => s.collectorDurability);
   const combatBoost = useGameStore(s => s.combatBoost);
@@ -154,7 +155,7 @@ export function HUD() {
   const systems = useMemo(() => [
     { key: 'energyCollector' as SystemKey, icon: SYSTEMS.energyCollector.icon, title: SYSTEMS.energyCollector.name, lv: civ.energyCollectorLv, color: SYSTEMS.energyCollector.color,
       bars: [
-        { label: t('hud.collect_rate'), value: rate, rate: rate + '/s', color: THEME.accent.green },
+        { label: t('hud.collect_rate'), value: rate, rate: fmt(rate, 2) + t('general.per_sec'), color: THEME.accent.green },
         ...(collectorDur.max > 0 ? [{ label: t('hud.durability'), value: collectorDur.current, max: collectorDur.max, color: THEME.accent.blue }] : []),
       ] },
     { key: 'weapon' as SystemKey, icon: SYSTEMS.weapon.icon, title: SYSTEMS.weapon.name, lv: civ.weaponLv, color: SYSTEMS.weapon.color,
@@ -165,11 +166,11 @@ export function HUD() {
         { label: t('hud.defense'), value: defVal, color: SYSTEMS.shield.color },
       ] },
     { key: 'radar' as SystemKey, icon: SYSTEMS.radar.icon, title: SYSTEMS.radar.name, lv: civ.radarLv, color: SYSTEMS.radar.color,
-      bars: [{ label: t('hud.scan_range'), value: civ.scanRange, rate: civ.scanRange + ' ls', color: THEME.accent.blue }] },
+      bars: [{ label: t('hud.scan_range'), value: civ.scanRange, rate: civ.scanRange + t('general.ls'), color: THEME.accent.blue }] },
     { key: 'engine' as SystemKey, icon: SYSTEMS.engine.icon, title: SYSTEMS.engine.name, lv: civ.engineLv, color: SYSTEMS.engine.color,
-      bars: [{ label: t('hud.speed'), value: calcSpeed(civ.engineLv), rate: calcSpeed(civ.engineLv) + ' ls/h', color: SYSTEMS.engine.color }],
+      bars: [{ label: t('hud.speed'), value: calcSpeed(civ.engineLv), rate: calcSpeed(civ.engineLv) + t('general.ls_h'), color: SYSTEMS.engine.color }],
     },
-  ], [civ, rate, atk, defVal]);
+  ], [civ, rate, atk, defVal, t]);
 
   return (
     <Container $mobile={isMobile}>
@@ -202,17 +203,17 @@ export function HUD() {
         </Row>
         <Row>
           <StatPill $color={THEME.accent.gold}>
-            <StatLabel>{t('hud.dft')}</StatLabel>
-            <StatValue $color={THEME.accent.gold}>{dftNum > 1e9 ? (dftNum / 1e9).toFixed(2) + 'B' : dftNum.toFixed(1)}</StatValue>
+            <StatLabel>{t('hud.ses')}</StatLabel>
+            <StatValue $color={THEME.accent.gold}>{fmtCompact(sesNum)}</StatValue>
           </StatPill>
           <StatPill $color={THEME.accent.green}>
             <StatLabel>{t('general.energy')}</StatLabel>
-            <StatValue $color={THEME.accent.green}>{civ.energy.toLocaleString()}</StatValue>
-            <StatRate>{rate}/s</StatRate>
+            <StatValue $color={THEME.accent.green}>{fmt(civ.energy)}</StatValue>
+            <StatRate>{fmt(rate, 2)}{t('general.per_sec')}</StatRate>
           </StatPill>
           <StatPill $color={THEME.accent.red}>
             <StatLabel>{t('general.health')}</StatLabel>
-            <StatValue $color={THEME.accent.red}>{civ.health.toLocaleString()}</StatValue>
+            <StatValue $color={THEME.accent.red}>{fmt(civ.health)}</StatValue>
           </StatPill>
           <StatPill $color={THEME.accent.shield}>
             <StatLabel>{t('hud.shield')}</StatLabel>
@@ -223,9 +224,9 @@ export function HUD() {
           <StatPill $color="#8844ff">
             <StatLabel>{t('hud.attack_token_label')}</StatLabel>
             <StatValue $color="#8844ff">
-              {tokens.current.toFixed(1)}/{tokens.max}
+              {fmt(tokens.current, 1)}/{tokens.max}
             </StatValue>
-            <StatRate>{tokens.ratePerSec.toFixed(4).replace(/\.?0+$/, '')}/s</StatRate>
+            <StatRate>{fmt(tokens.ratePerSec, 4)}{t('general.per_sec')}</StatRate>
           </StatPill>
           {combatBoost > 0 && (
             <StatPill $color={THEME.accent.gold}>
@@ -237,7 +238,7 @@ export function HUD() {
           {pending > 0 && (
             <StatPill $color={THEME.accent.gold}>
               <StatLabel>{t('hud.pending_label')}</StatLabel>
-              <StatValue $color={THEME.accent.gold}>{pending.toLocaleString()}</StatValue>
+              <StatValue $color={THEME.accent.gold}>{fmt(pending)}</StatValue>
               <StatRate>{t('hud.pending_type')}</StatRate>
             </StatPill>
           )}

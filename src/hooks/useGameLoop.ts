@@ -3,9 +3,11 @@
  * 通过 TanStack Query 的 refetchInterval 从链上拉取数据。
  */
 
-import { useCivPolling } from './useQueryRefresh';
+import { useCivPolling, useAlliancePolling, useMarketPolling } from './useQueryRefresh';
 
 export function useGameLoop() {
   useCivPolling();
+  useAlliancePolling();
+  useMarketPolling();
   return null;
 }

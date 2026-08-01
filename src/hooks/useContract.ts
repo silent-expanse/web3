@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { BrowserProvider, Contract, JsonRpcSigner } from 'ethers';
 import { GAME } from '../utils/constants';
-import { DARK_FOREST_ABI, DFT_ABI, ALLIANCE_ABI, DAILY_MINTER_ABI } from '../utils/contract';
+import { SILENT_EXPANSE_ABI, SES_ABI, ALLIANCE_ABI, DAILY_MINTER_ABI } from '../utils/contract';
 
 export interface ContractState {
   provider: BrowserProvider | null;
   signer: JsonRpcSigner | null;
-  darkForest: Contract | null;
-  dftToken: Contract | null;
+  game: Contract | null;
+  sesToken: Contract | null;
   alliance: Contract | null;
   dailyMinter: Contract | null;
   isReady: boolean;
@@ -16,73 +16,113 @@ export interface ContractState {
   error: string | null;
 }
 
-const INITIAL: ContractState = {
-  provider: null,
-  signer: null,
-  darkForest: null,
-  dftToken: null,
-  alliance: null,
-  dailyMinter: null,
-  isReady: false,
-  isSimulated: true,
-  error: null,
-};
+function createInitialState(): ContractState {
+  return {
+    provider: null,
+    signer: null,
+    game: null,
+    sesToken: null,
+    alliance: null,
+    dailyMinter: null,
+    isReady: false,
+    isSimulated: true,
+    error: null,
+  };
+}
+
+/**
+ * Initialize contract instances from the current window.ethereum provider.
+ * Returns the new state, or null if ethereum is unavailable.
+ */
+async function initContracts(): Promise<ContractState | null> {
+  if (!window.ethereum) {
+    return { ...createInitialState(), isReady: true, isSimulated: true };
+  }
+
+  const provider = new BrowserProvider(window.ethereum);
+  const signer = await provider.getSigner();
+  const hasAddresses = !!GAME.SILENT_EXPANSE && !!GAME.SES_TOKEN && !!GAME.ALLIANCE;
+
+  if (!hasAddresses) {
+    return { ...createInitialState(), isReady: true, isSimulated: true };
+  }
+
+  const game = new Contract(GAME.SILENT_EXPANSE, SILENT_EXPANSE_ABI, signer);
+  const sesToken = new Contract(GAME.SES_TOKEN, SES_ABI, signer);
+  const alliance = new Contract(GAME.ALLIANCE, ALLIANCE_ABI, signer);
+  const dailyMinter = GAME.DAILY_MINTER
+    ? new Contract(GAME.DAILY_MINTER, DAILY_MINTER_ABI, signer)
+    : null;
+
+  return {
+    provider, signer, game, sesToken, alliance, dailyMinter,
+    isReady: true, isSimulated: false, error: null,
+  };
+}
 
 /**
  * useContract — 统一的合约连接层。
  *
- * isSimulated = true 时表示合约不可用，ConnectPanel 会显示等待状态。
- * 所有游戏操作（useGameActions）在合约不可用时直接抛出错误，不返回估算值。
+ * - 监听 MetaMask `accountsChanged` 事件，钱包切换时自动重建合约实例
+ * - 监听 `chainChanged` 事件，网络切换时自动重建
+ * - isSimulated = true 时表示合约不可用
  */
 export function useContract(): ContractState {
-  const [state, setState] = useState<ContractState>(INITIAL);
+  const [state, setState] = useState<ContractState>(createInitialState);
+
+  const reinit = useCallback(async () => {
+    try {
+      const next = await initContracts();
+      if (next) setState(next);
+    } catch (e) {
+      setState(prev => ({
+        ...prev, isReady: true,
+        error: e instanceof Error ? e.message : String(e),
+      }));
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
 
     const init = async () => {
-      try {
-        if (!window.ethereum) {
-          setState(prev => ({ ...prev, isReady: true, isSimulated: true }));
-          return;
-        }
-
-        const provider = new BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        const hasAddresses = !!GAME.DARK_FOREST && !!GAME.DFT_TOKEN && !!GAME.ALLIANCE;
-
-        if (hasAddresses) {
-          const darkForest = new Contract(GAME.DARK_FOREST, DARK_FOREST_ABI, signer);
-          const dftToken = new Contract(GAME.DFT_TOKEN, DFT_ABI, signer);
-          const alliance = new Contract(GAME.ALLIANCE, ALLIANCE_ABI, signer);
-          const dailyMinter = GAME.DAILY_MINTER
-            ? new Contract(GAME.DAILY_MINTER, DAILY_MINTER_ABI, signer)
-            : null;
-          if (!cancelled) {
-            setState({
-              provider, signer, darkForest, dftToken, alliance, dailyMinter,
-              isReady: true, isSimulated: false, error: null,
-            });
-          }
-        } else {
-          // Contract addresses not configured — run in simulation mode
-          if (!cancelled) {
-            setState(prev => ({ ...prev, isReady: true, isSimulated: true }));
-          }
-        }
-      } catch (e) {
-        if (!cancelled) {
-          setState(prev => ({
-            ...prev, isReady: true, isSimulated: true,
-            error: e instanceof Error ? e.message : String(e),
-          }));
-        }
-      }
+      const next = await initContracts();
+      if (!cancelled && next) setState(next);
     };
 
     init();
-    return () => { cancelled = true; };
-  }, []);
+
+    // ── Listen for wallet account changes ──
+    // When user switches accounts in MetaMask, the old signer becomes stale.
+    // We must recreate all contract instances with the new signer.
+    const handleAccountsChanged = (accounts: unknown) => {
+      if (!Array.isArray(accounts) || accounts.length === 0) {
+        // Wallet disconnected or locked
+        setState(createInitialState());
+        return;
+      }
+      reinit();
+    };
+
+    // ── Listen for chain changes ──
+    // When user switches networks, provider + signer must be recreated.
+    const handleChainChanged = () => {
+      reinit();
+    };
+
+    if (window.ethereum?.on) {
+      window.ethereum.on('accountsChanged', handleAccountsChanged);
+      window.ethereum.on('chainChanged', handleChainChanged);
+    }
+
+    return () => {
+      cancelled = true;
+      if (window.ethereum?.removeListener) {
+        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+        window.ethereum.removeListener('chainChanged', handleChainChanged);
+      }
+    };
+  }, [reinit]);
 
   return state;
 }

@@ -8,7 +8,7 @@
         "internalType": "address"
       },
       {
-        "name": "_dft",
+        "name": "_ses",
         "type": "address",
         "internalType": "address"
       }
@@ -17,7 +17,20 @@
   },
   {
     "type": "function",
-    "name": "DFT_FEE_BPS",
+    "name": "MAX_SWEEP_DEPTH",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "NUM_BUCKETS",
     "inputs": [],
     "outputs": [
       {
@@ -43,7 +56,7 @@
   },
   {
     "type": "function",
-    "name": "accruedDftFees",
+    "name": "PRICE_SCALE",
     "inputs": [],
     "outputs": [
       {
@@ -56,7 +69,7 @@
   },
   {
     "type": "function",
-    "name": "activeOrderCount",
+    "name": "SES_FEE_BPS",
     "inputs": [],
     "outputs": [
       {
@@ -69,7 +82,69 @@
   },
   {
     "type": "function",
-    "name": "activeOrderIds",
+    "name": "USER_HISTORY_SIZE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "accruedSesFees",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "amendBidPrice",
+    "inputs": [
+      {
+        "name": "bidId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "newSesPrice",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "amendOrderPrice",
+    "inputs": [
+      {
+        "name": "orderId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "newSesPrice",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "askBucketCount",
     "inputs": [
       {
         "name": "",
@@ -85,6 +160,100 @@
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "bidBucketCount",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "bidOrders",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "buyer",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "energyAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "remaining",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "sesPrice",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "bucketId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "createdAt",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "buyEnergy",
+    "inputs": [
+      {
+        "name": "energyAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxUnitPrice",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "cancelBidOrder",
+    "inputs": [
+      {
+        "name": "bidId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -92,6 +261,24 @@
     "inputs": [
       {
         "name": "orderId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "createBidOrder",
+    "inputs": [
+      {
+        "name": "energyAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "sesPrice",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -109,26 +296,13 @@
         "internalType": "uint256"
       },
       {
-        "name": "dftPrice",
+        "name": "sesPrice",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "dft",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IERC20"
-      }
-    ],
-    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -145,15 +319,20 @@
   },
   {
     "type": "function",
-    "name": "fillOrder",
+    "name": "fillBidOrder",
     "inputs": [
       {
-        "name": "orderId",
+        "name": "bidId",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "maxPrice",
+        "name": "energyAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "minUnitPrice",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -163,13 +342,105 @@
   },
   {
     "type": "function",
+    "name": "fillOrder",
+    "inputs": [
+      {
+        "name": "orderId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "energyAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxUnitPrice",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "firstAskBucket",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "game",
     "inputs": [],
     "outputs": [
       {
         "name": "",
         "type": "address",
-        "internalType": "contract IDarkForestEnergy"
+        "internalType": "contract ISilentExpanseStrifeEnergy"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getActiveBids",
+    "inputs": [
+      {
+        "name": "offset",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "limit",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple[]",
+        "internalType": "struct EnergyMarket.BidOrder[]",
+        "components": [
+          {
+            "name": "buyer",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "energyAmount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "remaining",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "sesPrice",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "bucketId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "createdAt",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
       }
     ],
     "stateMutability": "view"
@@ -206,14 +477,19 @@
             "internalType": "uint256"
           },
           {
-            "name": "dftPrice",
+            "name": "remaining",
             "type": "uint256",
             "internalType": "uint256"
           },
           {
-            "name": "active",
-            "type": "bool",
-            "internalType": "bool"
+            "name": "sesPrice",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "bucketId",
+            "type": "uint256",
+            "internalType": "uint256"
           },
           {
             "name": "createdAt",
@@ -221,6 +497,74 @@
             "internalType": "uint256"
           }
         ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getBestAsk",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "unitPrice",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "remaining",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getBestBid",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "unitPrice",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "remaining",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getBidCount",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getBidsByBuyer",
+    "inputs": [
+      {
+        "name": "buyer",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "ids",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
       }
     ],
     "stateMutability": "view"
@@ -240,14 +584,114 @@
   },
   {
     "type": "function",
-    "name": "orderIdToIndex",
+    "name": "getOrdersBySeller",
     "inputs": [
+      {
+        "name": "seller",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "ids",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getUserBidHistory",
+    "inputs": [
+      {
+        "name": "user",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "ids",
+        "type": "uint256[50]",
+        "internalType": "uint256[50]"
+      },
+      {
+        "name": "count",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getUserOrderHistory",
+    "inputs": [
+      {
+        "name": "user",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "ids",
+        "type": "uint256[50]",
+        "internalType": "uint256[50]"
+      },
+      {
+        "name": "count",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "lastBidBucket",
+    "inputs": [],
+    "outputs": [
       {
         "name": "",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "marketDeployer",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "nextBidId",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "nextOrderId",
+    "inputs": [],
     "outputs": [
       {
         "name": "",
@@ -279,19 +723,55 @@
         "internalType": "uint256"
       },
       {
-        "name": "dftPrice",
+        "name": "remaining",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "active",
-        "type": "bool",
-        "internalType": "bool"
+        "name": "sesPrice",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "bucketId",
+        "type": "uint256",
+        "internalType": "uint256"
       },
       {
         "name": "createdAt",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "sellEnergy",
+    "inputs": [
+      {
+        "name": "energyAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "minUnitPrice",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "ses",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IERC20"
       }
     ],
     "stateMutability": "view"
@@ -311,10 +791,220 @@
   },
   {
     "type": "function",
-    "name": "withdrawDftFees",
+    "name": "userBidHistory",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "userBidHistoryCursor",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "userOrderHistory",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "userOrderHistoryCursor",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "withdrawSesFees",
     "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "BidAmended",
+    "inputs": [
+      {
+        "name": "bidId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "buyer",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "oldPrice",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "newPrice",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "BidCancelled",
+    "inputs": [
+      {
+        "name": "bidId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "BidCreated",
+    "inputs": [
+      {
+        "name": "bidId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "buyer",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "energyAmount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "sesPrice",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "unitPrice",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "BidFilled",
+    "inputs": [
+      {
+        "name": "bidId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "seller",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "buyer",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "energyTransferred",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "sesPaid",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "sesFee",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
   },
   {
     "type": "event",
@@ -328,6 +1018,37 @@
       },
       {
         "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OrderAmended",
+    "inputs": [
+      {
+        "name": "orderId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "seller",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "oldPrice",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "newPrice",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -371,7 +1092,13 @@
         "internalType": "uint256"
       },
       {
-        "name": "dftPrice",
+        "name": "sesPrice",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "unitPrice",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -408,13 +1135,13 @@
         "internalType": "uint256"
       },
       {
-        "name": "dftPaid",
+        "name": "sesPaid",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
       },
       {
-        "name": "dftFee",
+        "name": "sesFee",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -434,7 +1161,17 @@
   },
   {
     "type": "error",
+    "name": "EM_InactiveBid",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "EM_InactiveOrder",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "EM_InvalidAmount",
     "inputs": []
   },
   {
@@ -444,7 +1181,17 @@
   },
   {
     "type": "error",
-    "name": "EM_NotApproved",
+    "name": "EM_NoLiquidity",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "EM_NotBuyer",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "EM_NotDeployer",
     "inputs": []
   },
   {
@@ -459,7 +1206,17 @@
   },
   {
     "type": "error",
+    "name": "EM_PriceTooLow",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "EM_SelfFill",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "EM_SweepLimit",
     "inputs": []
   },
   {
@@ -480,6 +1237,11 @@
   {
     "type": "error",
     "name": "EM_ZeroPrice",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ReentrancyGuardReentrantCall",
     "inputs": []
   },
   {

@@ -8,6 +8,7 @@ import { ActionButton } from './ui/ActionButton';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { useI18n } from '../hooks/useI18n';
 import { THEME } from '../theme';
+import { fmt } from '../utils/format';
 
 const Panel = styled.div<{ $mobile: boolean }>`
   background: ${THEME.card};
@@ -80,18 +81,19 @@ export function AlliancePanel() {
   const address = useGameStore(s => s.address);
   const alliance = useGameStore(s => s.currentAlliance);
   const loading = useGameStore(s => s.loading);
+  const members = useGameStore(s => s._allianceMembers);
+  const totemLevel = useGameStore(s => s._allianceTotemLevel);
+  const totemEnergy = useGameStore(s => s._allianceTotemEnergy);
+  const totemUpgradeCostVal = useGameStore(s => s._allianceTotemUpgradeCost);
+  const isLeader = useGameStore(s => s._allianceIsLeader);
   const { createAlliance, joinAlliance, leaveAlliance, disbandAlliance, claimRefund, donateToTotem, upgradeTotem } = useGameActions();
 
   const [tab, setTab] = useState<'mine' | 'list'>('mine');
   const [allianceName, setAllianceName] = useState('');
   const [donateAmt, setDonateAmt] = useState('');
   const [alliances, setAlliances] = useState<AllianceInfo[]>([]);
-  const [members, setMembers] = useState<string[]>([]);
-  const [totemLevel, setTotemLevel] = useState(1);
-  const [totemEnergy, setTotemEnergy] = useState(0);
-  const [totemUpgradeCostVal, setTotemUpgradeCostVal] = useState(0);
-  const [isLeader, setIsLeader] = useState(false);
 
+  // 仅「列表」标签需要手动拉取所有联盟
   const fetchAlliances = useCallback(async () => {
     if (!ct.alliance) return;
     try {
@@ -105,50 +107,12 @@ export function AlliancePanel() {
         } catch { /* skip */ }
       }
       setAlliances(infos);
-    } catch { /* chain not available */ }
+    } catch { /* ignore */ }
   }, [ct]);
 
-  const fetchMyAlliance = useCallback(async () => {
-    if (!ct.alliance) return;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * attempt));
-        // 从合约查询玩家所属联盟（可能 store 中还未设置）
-        let targetId = alliance?.id;
-        if (!targetId && address) {
-          const pid: string = await ct.alliance.playerAlliance(address);
-          if (pid && pid !== '0x' + '00'.repeat(32)) targetId = pid;
-        }
-        if (!targetId) return;
-        // 先读取联盟数据
-        const rawAlliance = await ct.alliance.alliances(targetId);
-        // 同步更新全局 store，让面板显示联盟详情而非创建表单
-        useGameStore.setState({
-          currentAlliance: {
-            id: targetId,
-            name: String(rawAlliance.name ?? ''),
-            memberCount: Number(rawAlliance.memberCount ?? rawAlliance[3] ?? 0),
-            level: Number(rawAlliance.level ?? rawAlliance[2] ?? 1),
-          },
-        });
-        const addrs: string[] = await ct.alliance.getAllianceMembers(targetId);
-        setMembers(addrs.slice(0, 10));
-        setTotemLevel(Number(rawAlliance.totemLevel ?? rawAlliance[6] ?? 0));
-        setTotemEnergy(Number(rawAlliance.totemEnergy ?? rawAlliance[7] ?? 0));
-        const costRaw = await ct.alliance.totemUpgradeCost(targetId);
-        setTotemUpgradeCostVal(Number(costRaw));
-        const leaderCheck = await ct.alliance.isLeader(targetId, address || '');
-        setIsLeader(leaderCheck ?? false);
-        return;
-      } catch { /* retry */ }
-    }
-  }, [ct, alliance, address]);
-
-  // 标签切换 + alliance 变化时拉取数据
   useEffect(() => {
     if (tab === 'list') fetchAlliances();
-    if (tab === 'mine') fetchMyAlliance();
-  }, [tab, alliance, fetchAlliances, fetchMyAlliance]);
+  }, [tab, fetchAlliances]);
 
   const handleCreate = async () => {
     if (!allianceName.trim()) return;
@@ -156,17 +120,14 @@ export function AlliancePanel() {
     setAllianceName('');
     setTab('mine');
   };
-
   const handleJoin = async (id: string) => {
     await joinAlliance(id);
     setTab('mine');
   };
-
   const handleLeave = async (allianceId: string) => {
     await leaveAlliance(allianceId);
     setTab('list');
   };
-
   const handleDisband = async (allianceId: string) => {
     await disbandAlliance(allianceId);
     setTab('list');
@@ -196,12 +157,12 @@ export function AlliancePanel() {
               </div>
               <Row>
                 <span>{t('alliance.totem')} Lv.{totemLevel}</span>
-                <span>{t('alliance.totem_pool')}: {totemEnergy.toLocaleString()}⚡</span>
+                <span>{t('alliance.totem_pool')}: {fmt(totemEnergy)}⚡</span>
               </Row>
               {isLeader && (
                 <Row>
                   <span>⬆ {t('alliance.upgrade_totem')}</span>
-                  <span style={{ color: THEME.accent.green }}>{totemUpgradeCostVal.toLocaleString()}⚡</span>
+                  <span style={{ color: THEME.accent.green }}>{fmt(totemUpgradeCostVal)}⚡</span>
                 </Row>
               )}
               {isLeader && <Row><span style={{ color: THEME.accent.gold }}>{t('alliance.leader')}</span></Row>}

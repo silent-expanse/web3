@@ -56,46 +56,46 @@ test_view() {
 }
 
 echo "========================================="
-echo "  Dark Forest — Frontend Smoke Test"
+echo "  Silent Expanse: Strife — Frontend Smoke Test"
 echo "  RPC: $RPC"
 echo "  Test address: $TEST_ADDR"
 echo "========================================="
 
 # ═══════════════════════════════════════════
-#  DarkForest (main game contract)
+#  SilentExpanseStrife (main game contract)
 # ═══════════════════════════════════════════
-DF="0x96ee7c1a3cd81858a6638917de2a1efd691ae2fe"
+DF="0xa5959273f87c7a555193fa2b9e81e0526cd357aa"
 echo ""
-echo "── DarkForest ──"
+echo "── SilentExpanseStrife ──"
 
 echo "  View functions:"
-test_view DarkForest "$DF" "getEntryFee()(uint256)"
-test_view DarkForest "$DF" "getCivilization(address)((string,(int256,int256,int256),uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,bool,bool,uint256))" "$TEST_ADDR"
-test_view DarkForest "$DF" "getAttackTokenInfo(address)((uint256,uint256,uint256,uint256))" "$TEST_ADDR"
-test_view DarkForest "$DF" "pendingCombatEnergy(address)(uint256)" "$TEST_ADDR"
-test_view DarkForest "$DF" "getCurrentShieldHP(address)(uint256)" "$TEST_ADDR"
-test_view DarkForest "$DF" "getMaxShieldHP(address)(uint256)" "$TEST_ADDR"
-test_view DarkForest "$DF" "getCurrentPosition(address)((int256,int256,int256))" "$TEST_ADDR"
-test_view DarkForest "$DF" "getEnergyCollectRate(address)(uint256)" "$TEST_ADDR"
-test_view DarkForest "$DF" "getUpgradeCost(address,string)(uint256,uint256)" "$TEST_ADDR" "collector"
-test_view DarkForest "$DF" "getUpgradeCost(address,string)(uint256,uint256)" "$TEST_ADDR" "weapon"
-test_view DarkForest "$DF" "getAttackEnergyCost(address)(uint256)" "$TEST_ADDR"
-test_view DarkForest "$DF" "getAttackPower(address)(uint256)" "$TEST_ADDR"
+test_view SilentExpanseStrife "$DF" "getEntryFee()(uint256)"
+test_view SilentExpanseStrife "$DF" "getCivilization(address)((string,(int256,int256,int256),uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,bool,bool,uint256))" "$TEST_ADDR"
+test_view SilentExpanseStrife "$DF" "getAttackTokenInfo(address)((uint256,uint256,uint256,uint256))" "$TEST_ADDR"
+test_view SilentExpanseStrife "$DF" "pendingCombatEnergy(address)(uint256)" "$TEST_ADDR"
+test_view SilentExpanseStrife "$DF" "getCurrentShieldHP(address)(uint256)" "$TEST_ADDR"
+test_view SilentExpanseStrife "$DF" "getMaxShieldHP(address)(uint256)" "$TEST_ADDR"
+test_view SilentExpanseStrife "$DF" "getCurrentPosition(address)((int256,int256,int256))" "$TEST_ADDR"
+test_view SilentExpanseStrife "$DF" "getEnergyCollectRate(address)(uint256)" "$TEST_ADDR"
+test_view SilentExpanseStrife "$DF" "getUpgradeCost(address,string)(uint256,uint256)" "$TEST_ADDR" "collector"
+test_view SilentExpanseStrife "$DF" "getUpgradeCost(address,string)(uint256,uint256)" "$TEST_ADDR" "weapon"
+test_view SilentExpanseStrife "$DF" "getAttackEnergyCost(address)(uint256)" "$TEST_ADDR"
+test_view SilentExpanseStrife "$DF" "getAttackPower(address)(uint256)" "$TEST_ADDR"
     echo "    ⏭ isInRange → needs msg.sender, skip (not called by client)"
-test_view DarkForest "$DF" "getActivePlayerCount()(uint256)"
-test_view DarkForest "$DF" "totalCivilizations()(uint256)"
-test_view DarkForest "$DF" "totalFeesCollected()(uint256)"
-test_view DarkForest "$DF" "gameStartTime()(uint256)"
-test_view DarkForest "$DF" "owner()(address)"
-test_view DarkForest "$DF" "dftToken()(address)"
-test_view DarkForest "$DF" "allianceSystem()(address)"
-test_view DarkForest "$DF" "gameplayLogic()(address)"
-test_view DarkForest "$DF" "battleLogic()(address)"
-test_view DarkForest "$DF" "movementLogic()(address)"
-test_view DarkForest "$DF" "adminLogic()(address)"
-test_view DarkForest "$DF" "agentRegistry()(address)"
-test_view DarkForest "$DF" "energyMarket()(address)"
-test_view DarkForest "$DF" "feeRecipient()(address)"
+test_view SilentExpanseStrife "$DF" "getActivePlayerCount()(uint256)"
+test_view SilentExpanseStrife "$DF" "totalCivilizations()(uint256)"
+test_view SilentExpanseStrife "$DF" "totalFeesCollected()(uint256)"
+test_view SilentExpanseStrife "$DF" "gameStartTime()(uint256)"
+test_view SilentExpanseStrife "$DF" "owner()(address)"
+test_view SilentExpanseStrife "$DF" "sesToken()(address)"
+test_view SilentExpanseStrife "$DF" "allianceSystem()(address)"
+test_view SilentExpanseStrife "$DF" "gameplayLogic()(address)"
+test_view SilentExpanseStrife "$DF" "battleLogic()(address)"
+test_view SilentExpanseStrife "$DF" "movementLogic()(address)"
+test_view SilentExpanseStrife "$DF" "adminLogic()(address)"
+test_view SilentExpanseStrife "$DF" "agentRegistry()(address)"
+test_view SilentExpanseStrife "$DF" "energyMarket()(address)"
+test_view SilentExpanseStrife "$DF" "feeRecipient()(address)"
 
 # Constants
 echo "  Constants (pure):"
@@ -116,15 +116,15 @@ for sig in \
     "DAILY_DFT_EMISSION()(uint256)" \
     "JUMP_COOLDOWN()(uint256)" \
     "MAX_BATTLE_HISTORY()(uint256)"; do
-    test_view DarkForest "$DF" "$sig"
+    test_view SilentExpanseStrife "$DF" "$sig"
 done
 
 # ═══════════════════════════════════════════
-#  DarkForestToken (DFT)
+#  SilentExpanseStrifeToken (SES Token)
 # ═══════════════════════════════════════════
-TOKEN="0x1266e922fe34459efda34e7ee5caf327fbf138d7"
+TOKEN="0x0c01d8500b8b819eb4459233d9bcc2e7c6a27109"
 echo ""
-echo "── DarkForestToken ──"
+echo "── SilentExpanseStrifeToken ──"
 test_view Token "$TOKEN" "balanceOf(address)(uint256)" "$TEST_ADDR"
 test_view Token "$TOKEN" "totalSupply()(uint256)"
 test_view Token "$TOKEN" "decimals()(uint8)"
@@ -132,18 +132,18 @@ test_view Token "$TOKEN" "symbol()(string)"
 test_view Token "$TOKEN" "name()(string)"
 
 # ═══════════════════════════════════════════
-#  DarkForestAlliance
+#  SilentExpanseStrifeAlliance
 # ═══════════════════════════════════════════
-ALLY="0x5f810a22359b678c01e72726149d387e79cd03f2"
+ALLY="0x061b60973cfdd0ce4fbb425cfd25d3f3f8bc9716"
 echo ""
-echo "── DarkForestAlliance ──"
+echo "── SilentExpanseStrifeAlliance ──"
 test_view Alliance "$ALLY" "getAllianceList()(bytes32[])"
 test_view Alliance "$ALLY" "MAX_MEMBERS()(uint256)"
 
 # ═══════════════════════════════════════════
 #  DailyMinter
 # ═══════════════════════════════════════════
-DM="0x9b1c4e550fbf1c802495e6521ee5812e4264c95f"
+DM="0x207c6eefd47f5d943f167504bf2cc1c6fa764803"
 echo ""
 echo "── DailyMinter ──"
 test_view DailyMinter "$DM" "currentEpoch()(uint256)"
@@ -156,7 +156,7 @@ test_view DailyMinter "$DM" "hasClaimed(address)(bool)" "$TEST_ADDR"
 # ═══════════════════════════════════════════
 #  EnergyMarket
 # ═══════════════════════════════════════════
-EM="0x69f8dad1b4c9ceaf00bc48ed2216931ba78c5955"
+EM="0xe21c780c163fd65e8962cfbaea143d825cc7b8e8"
 echo ""
 echo "── EnergyMarket ──"
 test_view EnergyMarket "$EM" "getOrderCount()(uint256)"

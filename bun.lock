@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "@dark-forest/client",
+      "name": "@silent-expanse/client",
       "dependencies": {
         "@rainbow-me/rainbowkit": "^2.2.0",
         "@tanstack/react-query": "^5.101.0",

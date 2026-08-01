@@ -11,11 +11,11 @@ RPC = "https://bsc-dataseed1.binance.org"
 
 # ── contract addresses (from constants.ts) ──
 ADDRESSES = {
-    "DarkForest":          "0x96ee7c1a3cd81858a6638917de2a1efd691ae2fe",
-    "DarkForestToken":     "0x1266e922fe34459efda34e7ee5caf327fbf138d7",
-    "DarkForestAlliance":  "0x5f810a22359b678c01e72726149d387e79cd03f2",
-    "DailyMinter":         "0x9b1c4e550fbf1c802495e6521ee5812e4264c95f",
-    "EnergyMarket":        "0x69f8dad1b4c9ceaf00bc48ed2216931ba78c5955",
+    "SilentExpanseStrife":          "0xa5959273f87c7a555193fa2b9e81e0526cd357aa",
+    "SilentExpanseStrifeToken":     "0x0c01d8500b8b819eb4459233d9bcc2e7c6a27109",
+    "SilentExpanseStrifeAlliance":  "0x061b60973cfdd0ce4fbb425cfd25d3f3f8bc9716",
+    "DailyMinter":         "0x207c6eefd47f5d943f167504bf2cc1c6fa764803",
+    "EnergyMarket":        "0xe21c780c163fd65e8962cfbaea143d825cc7b8e8",
 }
 
 # ── test parameters for functions that need them ──
@@ -26,7 +26,7 @@ ZERO_ADDR     = "0x0000000000000000000000000000000000000000"
 # ── per-function test args (function_name -> list of args) ──
 # Only for functions that require parameters beyond what signature provides.
 PER_FUNC_ARGS = {
-    # DarkForest
+    # SilentExpanseStrife
     "getCivilization":        [TEST_ADDR],
     "getAttackTokenInfo":     [TEST_ADDR],
     "pendingCombatEnergy":    [TEST_ADDR],
@@ -58,7 +58,7 @@ PER_FUNC_ARGS = {
     "gameplayLogic":          [],
     "energyMarket":           [],
     "feeRecipient":           [],
-    "dftToken":               [],
+    "sesToken":               [],
     # DailyMinter
     "hasClaimed":             [TEST_ADDR],
     "getEpochInfo":           [],
@@ -239,9 +239,9 @@ def main():
 
     # Define which ABIs to test (the ones the client uses)
     client_abis = [
-        ("DarkForest", ADDRESSES["DarkForest"]),
-        ("DarkForestToken", ADDRESSES["DarkForestToken"]),
-        ("DarkForestAlliance", ADDRESSES["DarkForestAlliance"]),
+        ("SilentExpanseStrife", ADDRESSES["SilentExpanseStrife"]),
+        ("SilentExpanseStrifeToken", ADDRESSES["SilentExpanseStrifeToken"]),
+        ("SilentExpanseStrifeAlliance", ADDRESSES["SilentExpanseStrifeAlliance"]),
         ("DailyMinter", ADDRESSES["DailyMinter"]),
         ("EnergyMarket", ADDRESSES["EnergyMarket"]),
     ]
@@ -260,7 +260,7 @@ def main():
     skipped = 0
 
     print("=" * 72)
-    print("  DARK FOREST — Frontend Contract Smoke Test")
+    print("  SILENT EXPANSE: STRIFE — Frontend Contract Smoke Test")
     print(f"  RPC: {RPC}")
     print("=" * 72)
 

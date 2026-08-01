@@ -71,7 +71,7 @@
   },
   {
     "type": "function",
-    "name": "PERM_CLAIM_DFT",
+    "name": "PERM_CLAIM_SES",
     "inputs": [],
     "outputs": [
       {
@@ -380,7 +380,7 @@
         "internalType": "address"
       },
       {
-        "name": "costDFT",
+        "name": "costSES",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -462,7 +462,7 @@
       {
         "name": "policy",
         "type": "tuple",
-        "internalType": "struct DarkForestAgentRegistry.AgentPolicy",
+        "internalType": "struct SilentExpanseStrifeAgentRegistry.AgentPolicy",
         "components": [
           {
             "name": "minEnergyReserve",
@@ -878,7 +878,7 @@
       {
         "name": "policy",
         "type": "tuple",
-        "internalType": "struct DarkForestAgentRegistry.AgentPolicy",
+        "internalType": "struct SilentExpanseStrifeAgentRegistry.AgentPolicy",
         "components": [
           {
             "name": "minEnergyReserve",

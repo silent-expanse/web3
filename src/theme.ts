@@ -1,5 +1,5 @@
 /**
- * Dark Forest — 统一设计调色板 (依据 FRONTEND_DESIGN.md §1.2)
+ * Silent Expanse: Strife — 统一设计调色板 (依据 FRONTEND_DESIGN.md §1.2)
  *
  * 所有组件引用此文件，不再硬编码色值。
  * 调整设计时只需改此一处。
@@ -25,7 +25,7 @@ export const THEME = {
     blue: '#4A90D9' as const,
     /** 战斗红 / 危险 */
     red: '#FF4757' as const,
-    /** DFT 金 / 稀有 */
+    /** SES 金 / 稀有 */
     gold: '#FFD93D' as const,
     /** 护盾蓝 */
     shield: '#5F9FFF' as const,

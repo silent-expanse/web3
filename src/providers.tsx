@@ -29,7 +29,7 @@ const config = createConfig({
   },
 });
 
-/** Dark Forest custom RainbowKit theme — dark background, green accent */
+/** Silent Expanse: Strife custom RainbowKit theme — dark background, green accent */
 const dfTheme = {
   ...darkTheme(),
   colors: {

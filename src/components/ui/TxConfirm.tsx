@@ -89,7 +89,7 @@ const Gas = styled.div`
  *     confirmVariant="danger"
  *   >
  *     消耗: 3,000 能量 + 1 令牌<br />
- *     掠夺: 15% DFT
+ *     掠夺: 15% SES
  *   </TxConfirm>
  */
 export function TxConfirm({

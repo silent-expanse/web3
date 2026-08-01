@@ -66,7 +66,7 @@ interface GameState {
   attackTokens: AttackTokenInfo;
   pendingEnergy: number;
   isDestroyed: boolean;
-  dftBalance: string;
+  sesBalance: string;
   entryFee: string;
 
   enemyCivs: Map<string, Civilization>;
@@ -90,7 +90,7 @@ interface GameState {
   setPlayerCiv: (civ: Civilization | null) => void;
   setAttackTokens: (info: AttackTokenInfo) => void;
   setPendingEnergy: (energy: number) => void;
-  setDFTBalance: (balance: string) => void;
+  setSESBalance: (balance: string) => void;
   setEntryFee: (fee: string) => void;
   addEnemyCiv: (address: string, civ: Civilization) => void;
   clearEnemyCivs: () => void;
@@ -120,6 +120,13 @@ interface GameState {
   collectRate: number;
   collectorDurability: { current: number; max: number };
   combatBoost: number;
+  marketOrders: { id: number; price: number; amount: number; seller: string; isMine: boolean }[];
+  // 联盟轮询（_ 前缀表来自 useQueryRefresh 的自动写，非手动）
+  _allianceMembers: string[];
+  _allianceTotemLevel: number;
+  _allianceTotemEnergy: number;
+  _allianceTotemUpgradeCost: number;
+  _allianceIsLeader: boolean;
 
   /* ─── daily claim / epoch ─── */
   lastClaimDay: number;
@@ -132,7 +139,7 @@ interface GameState {
 
   setSearchAddress: (addr: string) => void;
   setSearchResult: (result: { name: string; distance: number; inRange: boolean } | null) => void;
-  claimDFT: () => void;
+  claimSES: () => void;
 
   /* ─── target search ─── */
   searchAddress: string;
@@ -149,7 +156,7 @@ export const useGameStore = create<GameState>((set) => ({
   attackTokens: { current: 0, max: 0, intervalSec: 0, ratePerSec: 0 },
   pendingEnergy: 0,
   isDestroyed: false,
-  dftBalance: '0',
+  sesBalance: '0',
   entryFee: '0.01',
 
   enemyCivs: new Map(),
@@ -171,6 +178,12 @@ export const useGameStore = create<GameState>((set) => ({
   collectRate: 0,
   collectorDurability: { current: 0, max: 0 },
   combatBoost: 0,
+  marketOrders: [],
+  _allianceMembers: [],
+  _allianceTotemLevel: 0,
+  _allianceTotemEnergy: 0,
+  _allianceTotemUpgradeCost: 0,
+  _allianceIsLeader: false,
   lastClaimDay: 0,
   currentEpoch: 0,
   epochClaimed: false,
@@ -185,9 +198,9 @@ export const useGameStore = create<GameState>((set) => ({
   setConnected: (address) => set({ connected: true, address }),
   setDisconnected: () => set({
     connected: false, address: null, playerCiv: null,
-    dftBalance: '0', currentAlliance: null, battleLog: [],
+    sesBalance: '0', currentAlliance: null, battleLog: [],
     enemyCivs: new Map(), pendingEnergy: 0, isDestroyed: false, toasts: [], attackBeams: [],
-    lastCollectTime: 0, collectRate: 0, collectorDurability: { current: 0, max: 0 }, combatBoost: 0,
+    lastCollectTime: 0, collectRate: 0, collectorDurability: { current: 0, max: 0 }, combatBoost: 0, marketOrders: [], _allianceMembers: [], _allianceTotemLevel: 0, _allianceTotemEnergy: 0, _allianceTotemUpgradeCost: 0, _allianceIsLeader: false,
   currentEpoch: 0, epochClaimed: false, lastDistributedEpoch: 0,
     epochStartTime: 0, epochEndTime: 0, dailyEmission: 0,
   }),
@@ -195,7 +208,7 @@ export const useGameStore = create<GameState>((set) => ({
   setPlayerCiv: (civ) => set({ playerCiv: civ }),
   setAttackTokens: (info) => set({ attackTokens: info }),
   setPendingEnergy: (energy) => set({ pendingEnergy: energy }),
-  setDFTBalance: (balance) => set({ dftBalance: balance }),
+  setSESBalance: (balance) => set({ sesBalance: balance }),
   setEntryFee: (fee) => set({ entryFee: fee }),
   addEnemyCiv: (address, civ) =>
     set((state) => { const m = new Map(state.enemyCivs); m.set(address, civ); return { enemyCivs: m }; }),
@@ -242,14 +255,14 @@ export const useGameStore = create<GameState>((set) => ({
   /* ─── daily claim ─── */
   setSearchAddress: (addr) => set({ searchAddress: addr }),
   setSearchResult: (result) => set({ searchResult: result }),
-  claimDFT: () => {
+  claimSES: () => {
     const today = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
     set({ lastClaimDay: today });
   },
 }));
 
-// canClaimDFT as standalone function (avoids circular type in store)
-export function canClaimDFT(): boolean {
+// canClaimSES as standalone function (avoids circular type in store)
+export function canClaimSES(): boolean {
   const state = useGameStore.getState();
   const today = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
   return today !== state.lastClaimDay;

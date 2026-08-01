@@ -7,6 +7,7 @@ import { LoadingOverlay } from './Spinner';
 import { ActionButton } from './ui/ActionButton';
 import { useI18n } from '../hooks/useI18n';
 import { THEME } from '../theme';
+import { fmt, fmtCompact } from '../utils/format';
 
 /* ═══════════════════════════════════════════
    Layout
@@ -191,7 +192,7 @@ export function ActionPanel() {
   const pending = useGameStore(s => s.pendingEnergy);
   const loading = useGameStore(s => s.loading);
   const error = useGameStore(s => s.error);
-  const dftBalance = useGameStore(s => s.dftBalance);
+  const sesBalance = useGameStore(s => s.sesBalance);
   const playerCiv = useGameStore(s => s.playerCiv);
   const collectRate = useGameStore(s => s.collectRate);
   const lastCollectTime = useGameStore(s => s.lastCollectTime);
@@ -203,7 +204,7 @@ export function ActionPanel() {
   const isMobile = useIsMobile();
   const { t } = useI18n();
 
-  const { collectEnergy, claimCombatEnergy, claimDailyDFT, startMove, spaceJump, repairShield, regenShield, repairAll, cancelMove, clearError } = useGameActions();
+  const { collectEnergy, claimCombatEnergy, claimDailySES, distribute, startMove, spaceJump, repairShield, regenShield, repairAll, cancelMove, clearError } = useGameActions();
 
   const handleStartMove = () => {
     const x = parseInt(tx), y = parseInt(ty), z = parseInt(tz);
@@ -219,7 +220,7 @@ export function ActionPanel() {
     ? Math.floor(collectRate * (Date.now() - lastCollectTime) / 1000)
     : 0;
 
-  /* ── DFT epoch ── */
+  /* ── SES epoch ── */
   const epochDistributed = lastDistributedEpoch >= currentEpoch;
   const epochRemaining = epochEndTime > 0
     ? Math.max(0, Math.floor((epochEndTime * 1000 - Date.now()) / 1000))
@@ -237,16 +238,20 @@ export function ActionPanel() {
       {playerCiv && (
         <Infos>
           <InfoChip $color={THEME.accent.gold}>
-            <InfoLabel>{t('action.dft_balance')}</InfoLabel>
-            <InfoValue $color={THEME.accent.gold}>{parseFloat(dftBalance).toFixed(2)}</InfoValue>
+            <InfoLabel>{t('action.ses_balance')}</InfoLabel>
+            <InfoValue $color={THEME.accent.gold}>{fmtCompact(sesBalance)}</InfoValue>
           </InfoChip>
           <InfoChip $color={THEME.accent.green}>
             <InfoLabel>{t('action.collect_rate')}</InfoLabel>
-            <InfoValue $color={THEME.accent.green}>{collectRate}/s</InfoValue>
+            <InfoValue $color={THEME.accent.green}>{fmt(collectRate, 2)}{t('general.per_sec')}</InfoValue>
           </InfoChip>
           <InfoChip $color="#8844ff">
             <InfoLabel>{t('action.daily_est')}</InfoLabel>
-            <InfoValue $color="#8844ff">{dailyEmission > 0 ? dailyEmission.toFixed(0) : '…'} DFT</InfoValue>
+            <InfoValue $color="#8844ff">{dailyEmission > 0 ? fmt(dailyEmission, 0) : '…'} SES</InfoValue>
+          </InfoChip>
+          <InfoChip $color={THEME.accent.blue}>
+            <InfoLabel>{t('general.epoch')} #{currentEpoch}</InfoLabel>
+            <InfoValue $color={THEME.accent.blue}>{epochRemainStr}</InfoValue>
           </InfoChip>
         </Infos>
       )}
@@ -264,8 +269,8 @@ export function ActionPanel() {
         {/* Collect Energy — with pending estimate */}
         <ActionCard $color={THEME.accent.green} $disabled={loading} onClick={() => !loading && collectEnergy()}>
           <ActionIcon>⚡</ActionIcon>
-          <ActionLabel $color={THEME.accent.green}>{t('action.collect_energy')}</ActionLabel>
-          {pendingCollect > 0 && <ActionBadge $color={THEME.accent.green}>~{pendingCollect.toLocaleString()}</ActionBadge>}
+          <ActionLabel $color={THEME.accent.green}>{t('action.collect')}</ActionLabel>
+          {pendingCollect > 0 && <ActionBadge $color={THEME.accent.green}>~{fmt(pendingCollect)}</ActionBadge>}
         </ActionCard>
 
         {/* Combat Energy Claim */}
@@ -273,22 +278,34 @@ export function ActionPanel() {
           onClick={() => !loading && pending > 0 && claimCombatEnergy()}>
           <ActionIcon>📦</ActionIcon>
           <ActionLabel $color={pending > 0 ? THEME.accent.gold : THEME.text.secondary}>{t('action.combat_energy')}</ActionLabel>
-          {pending > 0 && <ActionBadge $color={THEME.accent.gold}>{pending.toLocaleString()}</ActionBadge>}
+          {pending > 0 && <ActionBadge $color={THEME.accent.gold}>{fmt(pending)}</ActionBadge>}
           {pending <= 0 && <ActionBadge $color={THEME.text.secondary}>{t('action.combat_energy_empty')}</ActionBadge>}
         </ActionCard>
 
-        {/* Daily DFT Claim — with epoch status */}
-        <ActionCard $color={epochClaimed ? THEME.text.secondary : '#8844ff'}
-          $disabled={loading || epochClaimed || !epochDistributed}
-          onClick={() => !loading && !epochClaimed && epochDistributed && claimDailyDFT()}>
-          <ActionIcon>📅</ActionIcon>
-          <ActionLabel $color={epochClaimed ? THEME.text.secondary : '#8844ff'}>
-            {epochClaimed ? t('action.claimed_today') : t('action.claim_dft')}
-          </ActionLabel>
-          <ActionBadge $color={epochDistributed ? (epochClaimed ? THEME.text.secondary : THEME.accent.green) : THEME.accent.gold}>
-            {!epochDistributed ? t('action.distributing') : epochClaimed ? '✓' : epochRemainStr}
-          </ActionBadge>
-        </ActionCard>
+        {/* Daily SES — Distribute (全局分发) */}
+        {!epochDistributed && (
+          <ActionCard $color={THEME.accent.gold} $disabled={loading}
+            onClick={() => !loading && distribute()}>
+            <ActionIcon>📤</ActionIcon>
+            <ActionLabel $color={THEME.accent.gold}>{t('action.distribute')}</ActionLabel>
+            <ActionBadge $color={THEME.accent.gold}>{t('action.distributing')}</ActionBadge>
+          </ActionCard>
+        )}
+
+        {/* Daily SES — Claim */}
+        {epochDistributed && (
+          <ActionCard $color={epochClaimed ? THEME.text.secondary : '#8844ff'}
+            $disabled={loading || epochClaimed}
+            onClick={() => !loading && !epochClaimed && claimDailySES()}>
+            <ActionIcon>📅</ActionIcon>
+            <ActionLabel $color={epochClaimed ? THEME.text.secondary : '#8844ff'}>
+              {epochClaimed ? t('action.claimed_today') : t('action.claim_ses')}
+            </ActionLabel>
+            <ActionBadge $color={epochClaimed ? THEME.text.secondary : THEME.accent.green}>
+              {epochClaimed ? '✓' : epochRemainStr}
+            </ActionBadge>
+          </ActionCard>
+        )}
       </Grid>
 
       <Divider />

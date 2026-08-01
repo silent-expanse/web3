@@ -1,14 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import styled from 'styled-components';
-import { Contract } from 'ethers';
 import { useGameStore } from '../hooks/useGameStore';
-import { useContract } from '../hooks/useContract';
 import { useGameActions } from '../hooks/useGameActions';
 import { ActionButton } from './ui/ActionButton';
 import { THEME } from '../theme';
-import { GAME } from '../utils/constants';
-import { ENERGY_MARKET_ABI } from '../utils/contract';
 import { useI18n } from '../hooks/useI18n';
+import { fmt } from '../utils/format';
 
 const Panel = styled.div`
   background: ${THEME.card};
@@ -47,62 +44,29 @@ const OrderRow = styled.div`
 const Sell = styled.span` color: ${THEME.accent.red}; `;
 const Buy = styled.span` color: ${THEME.accent.green}; `;
 
-interface RawOrder { seller: string; energyAmount: bigint; dftPrice: bigint; active: boolean; createdAt: bigint; }
-interface Order { id: number; price: number; amount: number; seller: string; isMine: boolean; _index?: number; }
-
 export function EnergyMarket() {
   const { t } = useI18n();
-  const dft = useGameStore(s => s.dftBalance);
-  const playerCiv = useGameStore(s => s.playerCiv);
+  const ses = useGameStore(s => s.sesBalance);
   const address = useGameStore(s => s.address);
   const loading = useGameStore(s => s.loading);
-  const ct = useContract();
+  const orders = useGameStore(s => s.marketOrders);
   const { createEnergyOrder, fillEnergyOrder, cancelEnergyOrder } = useGameActions();
 
   const [sellAmount, setSellAmount] = useState('5000');
   const [sellPrice, setSellPrice] = useState('0.010');
-  const [orders, setOrders] = useState<Order[]>([]);
-
-  const fetchOrders = useCallback(async () => {
-    if (!GAME.ENERGY_MARKET || !ct.provider) return;
-    try {
-      const market = new Contract(GAME.ENERGY_MARKET, ENERGY_MARKET_ABI, ct.provider);
-      const rawOrders: RawOrder[] = await market.getActiveOrders(0, 50);
-      const parsed: Order[] = [];
-      rawOrders.forEach((o, i) => {
-        const sellerAddr = typeof o.seller === 'string' ? o.seller.toLowerCase() : '';
-        if (!sellerAddr) return;
-        parsed.push({
-          id: -1, amount: Number(o.energyAmount ?? 0), price: Number(o.dftPrice ?? 0) / 1e18,
-          seller: sellerAddr.slice(0, 6) + '...' + sellerAddr.slice(-4),
-          isMine: sellerAddr === (address || '').toLowerCase(), _index: i,
-        });
-      });
-      for (const order of parsed) {
-        try { const realId = await market.activeOrderIds(order._index!); order.id = Number(realId); delete order._index; }
-        catch { order.id = -1; }
-      }
-      setOrders(parsed.sort((a, b) => b.price - a.price));
-    } catch { setOrders([]); }
-  }, [ct, address]);
-
-  useEffect(() => { fetchOrders(); const i = setInterval(fetchOrders, 15000); return () => clearInterval(i); }, [fetchOrders]);
 
   const handleSell = async () => {
     const amt = Number(sellAmount), price = parseFloat(sellPrice);
     if (!amt || isNaN(price)) return;
     await createEnergyOrder(amt, price);
-    fetchOrders();
   };
-  const handleBuy = async (order: Order) => {
+  const handleBuy = async (order: { id: number; price: number; amount: number }) => {
     const cost = order.price * order.amount;
-    if (parseFloat(dft) < cost) return;
+    if (parseFloat(ses) < cost) return;
     await fillEnergyOrder(order.id, order.price);
-    fetchOrders();
   };
-  const handleCancel = async (order: Order) => {
+  const handleCancel = async (order: { id: number }) => {
     await cancelEnergyOrder(order.id);
-    fetchOrders();
   };
 
   return (
@@ -123,19 +87,19 @@ export function EnergyMarket() {
           <Row style={{ justifyContent: 'center', color: THEME.text.secondary, padding: 16 }}>
             {t('market.empty')}
           </Row>
-        ) : orders.map(o => (
-          <OrderRow key={`${o.id}-${o._index}`}>
+        ) : orders.map((o, i) => (
+          <OrderRow key={`${o.id}-${i}`}>
             <div style={{ flex: 1 }}>
-              <Sell>{t('market.order_energy', { amt: o.amount.toLocaleString() })}</Sell>
+              <Sell>{t('market.order_energy', { amt: fmt(o.amount) })}</Sell>
               {' @ '}
-              <Buy>{t('market.order_price', { price: o.price.toFixed(4) })}</Buy>
+              <Buy>{t('market.order_price', { price: fmt(o.price, 4) })}</Buy>
               <div style={{ fontSize: '0.65rem', color: THEME.text.secondary }}>{o.seller}{o.isMine ? ` ${t('market.order_you')}` : ''}</div>
             </div>
             <div style={{ display: 'flex', gap: 4 }}>
               {o.isMine ? (
                 <ActionButton variant="danger" onClick={() => handleCancel(o)} disabled={loading}>{t('market.cancel_btn')}</ActionButton>
               ) : (
-                <ActionButton variant="primary" onClick={() => handleBuy(o)} disabled={loading || parseFloat(dft) < o.price * o.amount}>
+                <ActionButton variant="primary" onClick={() => handleBuy(o)} disabled={loading || parseFloat(ses) < o.price * o.amount}>
                   {t('market.buy_btn')}
                 </ActionButton>
               )}

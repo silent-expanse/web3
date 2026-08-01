@@ -1,8 +1,48 @@
 [
   {
     "type": "constructor",
-    "inputs": [],
+    "inputs": [
+      {
+        "name": "_sesToken",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_allianceSystem",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_battleLogic",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_movementLogic",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_adminLogic",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_gameplayLogic",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_agentRegistry",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "receive",
+    "stateMutability": "payable"
   },
   {
     "type": "function",
@@ -149,7 +189,7 @@
   },
   {
     "type": "function",
-    "name": "DAILY_DFT_BASE",
+    "name": "DAILY_SES_BASE",
     "inputs": [],
     "outputs": [
       {
@@ -162,7 +202,7 @@
   },
   {
     "type": "function",
-    "name": "DAILY_DFT_EMISSION",
+    "name": "DAILY_SES_EMISSION",
     "inputs": [],
     "outputs": [
       {
@@ -202,19 +242,6 @@
   {
     "type": "function",
     "name": "DESTRUCTION_RATE",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "DFT_GROWTH_BPS",
     "inputs": [],
     "outputs": [
       {
@@ -435,45 +462,6 @@
   },
   {
     "type": "function",
-    "name": "JUMP_DFT_BASE",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "JUMP_DFT_MAX",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "JUMP_DFT_PER_SQRT",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "JUMP_ENERGY_BASE",
     "inputs": [],
     "outputs": [
@@ -501,6 +489,45 @@
   {
     "type": "function",
     "name": "JUMP_ENERGY_PER_SQRT",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "JUMP_SES_BASE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "JUMP_SES_MAX",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "JUMP_SES_PER_SQRT",
     "inputs": [],
     "outputs": [
       {
@@ -696,6 +723,19 @@
   {
     "type": "function",
     "name": "REPAIR_COST_PER_SEC",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "SES_GROWTH_BPS",
     "inputs": [],
     "outputs": [
       {
@@ -1058,7 +1098,7 @@
       {
         "name": "",
         "type": "address",
-        "internalType": "contract DarkForestAlliance"
+        "internalType": "contract SilentExpanseStrifeAlliance"
       }
     ],
     "stateMutability": "view"
@@ -1068,12 +1108,12 @@
     "name": "assistShieldRepair",
     "inputs": [
       {
-        "name": "target",
+        "name": "t",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "amount",
+        "name": "a",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -1086,7 +1126,7 @@
     "name": "attack",
     "inputs": [
       {
-        "name": "target",
+        "name": "t",
         "type": "address",
         "internalType": "address"
       }
@@ -1099,77 +1139,18 @@
     "name": "attackFor",
     "inputs": [
       {
-        "name": "target",
+        "name": "t",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "player",
+        "name": "p",
         "type": "address",
         "internalType": "address"
       }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "battleHistory",
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "attacker",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "defender",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "timestamp",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "damageDealt",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "shieldDamage",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "healthDamage",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "stolenEnergy",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "downgradedSystem",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "attackerWon",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -1186,16 +1167,122 @@
   },
   {
     "type": "function",
-    "name": "dftToken",
+    "name": "cancelMove",
     "inputs": [],
-    "outputs": [
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "claimCombatEnergy",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "claimCombatEnergyFor",
+    "inputs": [
       {
-        "name": "",
+        "name": "p",
         "type": "address",
-        "internalType": "contract DarkForestToken"
+        "internalType": "address"
       }
     ],
-    "stateMutability": "view"
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "collectEnergy",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "collectEnergyFor",
+    "inputs": [
+      {
+        "name": "p",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "createCivilization",
+    "inputs": [
+      {
+        "name": "name",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "createCivilization",
+    "inputs": [
+      {
+        "name": "name",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "referrer_",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "donateToTotem",
+    "inputs": [
+      {
+        "name": "allianceId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "donateToTotemFor",
+    "inputs": [
+      {
+        "name": "allianceId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "p",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -1294,6 +1381,923 @@
   },
   {
     "type": "function",
+    "name": "getActivePlayerCount",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getAttackEnergyCost",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getAttackPower",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getAttackTokenInfo",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "tokens",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "max",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "interval",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "rate",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getBattleCount",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getBattleHistory",
+    "inputs": [
+      {
+        "name": "offset",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "limit",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple[]",
+        "internalType": "struct SilentExpanseStrifeStorage.BattleRecord[]",
+        "components": [
+          {
+            "name": "attacker",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "defender",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "timestamp",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "damageDealt",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "shieldDamage",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "healthDamage",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "stolenEnergy",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "downgradedSystem",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "attackerWon",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getCivilization",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct SilentExpanseStrifeStorage.Civilization",
+        "components": [
+          {
+            "name": "name",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "location",
+            "type": "tuple",
+            "internalType": "struct SilentExpanseStrifeStorage.Coordinates",
+            "components": [
+              {
+                "name": "x",
+                "type": "int256",
+                "internalType": "int256"
+              },
+              {
+                "name": "y",
+                "type": "int256",
+                "internalType": "int256"
+              },
+              {
+                "name": "z",
+                "type": "int256",
+                "internalType": "int256"
+              }
+            ]
+          },
+          {
+            "name": "energy",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "health",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "energyCollectorLv",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "weaponLv",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "radarLv",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "shieldLv",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "engineLv",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "scanRange",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "lastUpdateTime",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "creationTime",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "exists",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "isRuins",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "ruinsTimestamp",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getCivilizations",
+    "inputs": [
+      {
+        "name": "players",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple[]",
+        "internalType": "struct SilentExpanseStrifeStorage.Civilization[]",
+        "components": [
+          {
+            "name": "name",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "location",
+            "type": "tuple",
+            "internalType": "struct SilentExpanseStrifeStorage.Coordinates",
+            "components": [
+              {
+                "name": "x",
+                "type": "int256",
+                "internalType": "int256"
+              },
+              {
+                "name": "y",
+                "type": "int256",
+                "internalType": "int256"
+              },
+              {
+                "name": "z",
+                "type": "int256",
+                "internalType": "int256"
+              }
+            ]
+          },
+          {
+            "name": "energy",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "health",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "energyCollectorLv",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "weaponLv",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "radarLv",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "shieldLv",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "engineLv",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "scanRange",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "lastUpdateTime",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "creationTime",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "exists",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "isRuins",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "ruinsTimestamp",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getCollectorDurability",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "current",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "max",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getCombatBoost",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getCompactPlayers",
+    "inputs": [
+      {
+        "name": "players",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple[]",
+        "internalType": "struct SilentExpanseStrife.CompactPlayer[]",
+        "components": [
+          {
+            "name": "player",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "x",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "y",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "z",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "name",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "isRuins",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "isMoving",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "eta",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getCurrentPosition",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "pos",
+        "type": "tuple",
+        "internalType": "struct SilentExpanseStrifeStorage.Coordinates",
+        "components": [
+          {
+            "name": "x",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "y",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "z",
+            "type": "int256",
+            "internalType": "int256"
+          }
+        ]
+      },
+      {
+        "name": "isMoving",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "eta",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getCurrentShieldHP",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getDistance",
+    "inputs": [
+      {
+        "name": "a",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "b",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getEnergyCollectRate",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getEntryFee",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getJumpCount",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getMaxShieldHP",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getPlayerCount",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getPlayers",
+    "inputs": [
+      {
+        "name": "offset",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "limit",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "players",
+        "type": "address[]",
+        "internalType": "address[]"
+      },
+      {
+        "name": "total",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getPositions",
+    "inputs": [
+      {
+        "name": "players",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "pos",
+        "type": "tuple[]",
+        "internalType": "struct SilentExpanseStrifeStorage.Coordinates[]",
+        "components": [
+          {
+            "name": "x",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "y",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "z",
+            "type": "int256",
+            "internalType": "int256"
+          }
+        ]
+      },
+      {
+        "name": "moving",
+        "type": "bool[]",
+        "internalType": "bool[]"
+      },
+      {
+        "name": "eta",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRebirthCount",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getSimpleStatuses",
+    "inputs": [
+      {
+        "name": "players",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple[]",
+        "internalType": "struct SilentExpanseStrife.SimpleStatus[]",
+        "components": [
+          {
+            "name": "player",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "energy",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "health",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "collectorLv",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "weaponLv",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "shieldLv",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "radarLv",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "engineLv",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "shieldHP",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "shieldMax",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "exists",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "isRuins",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getUpgradeCost",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "system",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "ses",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "energy",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isInRange",
+    "inputs": [
+      {
+        "name": "scanner",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "target",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "lockEnergyForOrder",
+    "inputs": [
+      {
+        "name": "s",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "a",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "movementLogic",
     "inputs": [],
     "outputs": [
@@ -1358,6 +2362,26 @@
   },
   {
     "type": "function",
+    "name": "rebuildCivilization",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "rebuildCivilizationFor",
+    "inputs": [
+      {
+        "name": "p",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "referralCount",
     "inputs": [
       {
@@ -1410,10 +2434,61 @@
   },
   {
     "type": "function",
+    "name": "repairAll",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "repairAllFor",
+    "inputs": [
+      {
+        "name": "p",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "repairCollector",
+    "inputs": [
+      {
+        "name": "a",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "repairCollectorFor",
+    "inputs": [
+      {
+        "name": "p",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "a",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "repairShield",
     "inputs": [
       {
-        "name": "amount",
+        "name": "a",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -1426,18 +2501,31 @@
     "name": "repairShieldFor",
     "inputs": [
       {
-        "name": "amount",
+        "name": "a",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "player",
+        "name": "p",
         "type": "address",
         "internalType": "address"
       }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "sesToken",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract SilentExpanseStrifeToken"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -1480,12 +2568,91 @@
   },
   {
     "type": "function",
+    "name": "setFeeRecipient",
+    "inputs": [
+      {
+        "name": "r",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "setGameplayLogic",
     "inputs": [
       {
         "name": "_gameplayLogicAddress",
         "type": "address",
         "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "settleLockedOrder",
+    "inputs": [
+      {
+        "name": "f",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "t",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "ta",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "spaceJump",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "spaceJumpFor",
+    "inputs": [
+      {
+        "name": "p",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "startMove",
+    "inputs": [
+      {
+        "name": "x",
+        "type": "int256",
+        "internalType": "int256"
+      },
+      {
+        "name": "y",
+        "type": "int256",
+        "internalType": "int256"
+      },
+      {
+        "name": "z",
+        "type": "int256",
+        "internalType": "int256"
       }
     ],
     "outputs": [],
@@ -1516,6 +2683,151 @@
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "trackingJump",
+    "inputs": [
+      {
+        "name": "t",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "unlockEnergyForOrder",
+    "inputs": [
+      {
+        "name": "s",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "a",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "upgradeSystem",
+    "inputs": [
+      {
+        "name": "sysId",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "upgradeSystemFor",
+    "inputs": [
+      {
+        "name": "sysId",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "p",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "upgradeTotem",
+    "inputs": [
+      {
+        "name": "allianceId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "upgradeTotemFor",
+    "inputs": [
+      {
+        "name": "allianceId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "p",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "withdrawFees",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "AdminLogicSet",
+    "inputs": [
+      {
+        "name": "logic",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "AgentRegistrySet",
+    "inputs": [
+      {
+        "name": "registry",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "AllSystemsRepaired",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "cost",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
   },
   {
     "type": "event",
@@ -1664,13 +2976,152 @@
         "internalType": "address"
       },
       {
-        "name": "costDFT",
+        "name": "costSES",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
       },
       {
         "name": "costEnergy",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "CollectorRepaired",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "cost",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "CombatEnergyClaimed",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "EnergyCollected",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "EnergyLocked",
+    "inputs": [
+      {
+        "name": "seller",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "EnergyMarketSet",
+    "inputs": [
+      {
+        "name": "market",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "EnergyTransferred",
+    "inputs": [
+      {
+        "name": "from",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "EnergyUnlocked",
+    "inputs": [
+      {
+        "name": "seller",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -1693,6 +3144,32 @@
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "GameplayLogicSet",
+    "inputs": [
+      {
+        "name": "logic",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "MoveCancelled",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
       }
     ],
     "anonymous": false
@@ -1881,7 +3358,7 @@
         "internalType": "uint256"
       },
       {
-        "name": "dftCost",
+        "name": "sesCost",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -1912,13 +3389,38 @@
         "internalType": "uint256"
       },
       {
-        "name": "costDFT",
+        "name": "costSES",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
       },
       {
         "name": "costEnergy",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "UpkeepDeducted",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "totalLevel",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -1950,6 +3452,17 @@
     "type": "error",
     "name": "E_CivNotFound",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "E_DelegatecallFailed",
+    "inputs": [
+      {
+        "name": "module",
+        "type": "string",
+        "internalType": "string"
+      }
+    ]
   },
   {
     "type": "error",

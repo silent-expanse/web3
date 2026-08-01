@@ -1,5 +1,6 @@
 import styled from 'styled-components';
 import { THEME } from '../../theme';
+import { fmt } from '../../utils/format';
 
 interface ResourceBarProps {
   label: string;
@@ -68,10 +69,10 @@ export function ResourceBar({ label, value, max, rate, color, icon }: ResourceBa
       <LabelRow>
         <Label>{icon || ''} {label}</Label>
         <span>
-          <Value $color={color}>{value.toLocaleString()}</Value>
+          <Value $color={color}>{fmt(value)}</Value>
           {hasMax && (
             <span style={{ color: THEME.text.secondary, fontSize: '0.7rem', fontFamily: "'Courier New', monospace" }}>
-              {' '}/ {max!.toLocaleString()}
+              {' '}/ {fmt(max!)}
             </span>
           )}
           {rate && (

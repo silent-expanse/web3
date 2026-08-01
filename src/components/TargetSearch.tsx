@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import styled from 'styled-components';
 import { useGameStore } from '../hooks/useGameStore';
 import { useContract } from '../hooks/useContract';
@@ -8,6 +8,7 @@ import { TxConfirm } from './ui/TxConfirm';
 import { THEME } from '../theme';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { useI18n } from '../hooks/useI18n';
+import { fmt } from '../utils/format';
 
 const Panel = styled.div`
   background: ${THEME.card};
@@ -84,6 +85,7 @@ export function TargetSearch() {
   const setSelectedTarget = useGameStore(s => s.setSelectedTarget);
   const { attackTarget } = useGameActions();
 
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchAddr, setSearchAddr] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [searchDistance, setSearchDistance] = useState<number | null>(null);
@@ -98,17 +100,17 @@ export function TargetSearch() {
   const targetName = targetCiv?.name ?? (target ? target.slice(0, 6) + '...' : '');
 
   const handleSearch = useCallback(async () => {
-    const addr = (document.getElementById('search-input') as HTMLInputElement)?.value?.trim();
+    const addr = searchInputRef.current?.value?.trim();
     if (!addr) return;
     useGameStore.setState({ loading: true });
     setSearchDistance(null);
     setInRange(false);
     try {
-      if (!ct.darkForest) throw new Error('Contract not available');
+      if (!ct.game) throw new Error('Contract not available');
       const [raw, dist, rangeCheck] = await Promise.all([
-        ct.darkForest.getCivilization(addr),
-        address ? ct.darkForest.getDistance(address, addr).catch(() => null) : null,
-        address ? ct.darkForest.isInRange(address, addr).catch(() => false) : false,
+        ct.game.getCivilization(addr),
+        address ? ct.game.getDistance(address, addr).catch(() => null) : null,
+        address ? ct.game.isInRange(address, addr).catch(() => false) : false,
       ]);
       if (raw) {
         const civ = civFromRaw(raw);
@@ -134,7 +136,7 @@ export function TargetSearch() {
       <SectionTitle>{t('combat.title')}</SectionTitle>
 
       <SearchBar>
-        <Input id="search-input" placeholder={t('combat.search_placeholder')} value={searchAddr}
+        <Input ref={searchInputRef} placeholder={t('combat.search_placeholder')} value={searchAddr}
           onChange={e => setSearchAddr(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSearch()} />
         <ActionButton variant="primary" onClick={handleSearch} disabled={loading || !searchAddr.trim()}>
@@ -150,11 +152,11 @@ export function TargetSearch() {
           </Row>
           <Row>
             <Label>{t('combat.energy')}</Label>
-            <Detail>{targetCiv.energy?.toLocaleString()}</Detail>
+            <Detail>{fmt(targetCiv.energy || 0)}</Detail>
           </Row>
           <Row>
             <Label>{t('combat.health')}</Label>
-            <Detail>{targetCiv.health?.toLocaleString()}</Detail>
+            <Detail>{fmt(targetCiv.health || 0)}</Detail>
           </Row>
           <Row>
             <Label>{t('combat.weapon_lv')}</Label>
@@ -167,14 +169,14 @@ export function TargetSearch() {
           {searchDistance !== null && (
             <Row>
               <Label>{t('combat.distance')}</Label>
-              <Detail>{searchDistance.toLocaleString()} ls</Detail>
+              <Detail>{fmt(searchDistance)} ls</Detail>
             </Row>
           )}
         </div>
       )}
 
       {target && targetCiv && !inRange && searchDistance !== null && (
-        <OutOfRange>{t('combat.out_of_range_warn', { range: playerCiv?.scanRange?.toLocaleString() || '?' })}</OutOfRange>
+        <OutOfRange>{t('combat.out_of_range_warn', { range: fmt(playerCiv?.scanRange || 0) })}</OutOfRange>
       )}
 
       <ActionButton variant="danger" disabled={!canAttack}
@@ -198,7 +200,7 @@ export function TargetSearch() {
       >
         {t('combat.confirm_cost', { cost: attackEnergyCost })}<br />
         {t('combat.confirm_target', { name: targetName })}<br />
-        {searchDistance !== null && <>{t('combat.confirm_distance', { dist: searchDistance.toLocaleString() })}<br /></>}
+        {searchDistance !== null && <>{t('combat.confirm_distance', { dist: fmt(searchDistance) })}<br /></>}
         {cooldownRemaining > 0 && <>{t('combat.confirm_cooldown', { sec: cooldownRemaining })}<br /></>}
       </TxConfirm>
     </Panel>

@@ -1,12 +1,16 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import styled from 'styled-components';
 import { useGameStore } from '../hooks/useGameStore';
 import { useContract } from '../hooks/useContract';
 import { useGameActions, calcCollectRate, calcAttackPower, calcShieldDefense, calcRadarRange, calcSpeed } from '../hooks/useGameActions';
+import { ActionButton } from './ui/ActionButton';
+import { TxConfirm } from './ui/TxConfirm';
+import { LoadingOverlay } from './Spinner';
 import { THEME } from '../theme';
 import { type SystemKey, SYSTEMS } from '../utils/constants';
 import { useI18n } from '../hooks/useI18n';
+import { fmt, fmtCompact } from '../utils/format';
 
 /* ═══════════════════════════════════════════
    Layout
@@ -17,6 +21,7 @@ const Panel = styled.div`
   border: 1px solid ${THEME.border};
   border-radius: 8px;
   padding: 14px 16px;
+  position: relative;
 `;
 
 const SectionTitle = styled.div`
@@ -26,6 +31,10 @@ const SectionTitle = styled.div`
   text-transform: uppercase;
   letter-spacing: 2px;
   margin-bottom: 10px;
+`;
+
+const LoadOverlay = styled.div`
+  position: absolute; inset: 0; z-index: 1; border-radius: 8px; overflow: hidden;
 `;
 
 /* ═══════════════════════════════════════════
@@ -173,6 +182,10 @@ const EnergyCostBadge = styled.span`
   margin-left: 4px;
 `;
 
+/* ═══════════════════════════════════════════
+   Error Banner
+   ═══════════════════════════════════════════ */
+
 const LoadingCost = styled.span`
   color: ${THEME.text.secondary};
   font-size: 0.65rem;
@@ -180,25 +193,17 @@ const LoadingCost = styled.span`
   opacity: 0.6;
 `;
 
-const UpgradeBtn = styled.button<{ $color: string; $disabled: boolean }>`
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 5px 12px;
-  font-size: 0.72rem;
+const ErrorBanner = styled.div`
+  color: ${THEME.accent.red};
+  font-size: 0.75rem;
   font-family: 'Courier New', monospace;
-  font-weight: bold;
-  border-radius: 4px;
-  border: none;
-  cursor: ${({ $disabled }) => $disabled ? 'not-allowed' : 'pointer'};
-  opacity: ${({ $disabled }) => $disabled ? 0.35 : 1};
-  background: ${({ $color }) => $color};
-  color: ${THEME.bg};
-  transition: opacity 0.15s;
-  white-space: nowrap;
-  -webkit-tap-highlight-color: transparent;
-  &:hover:not(:disabled) { opacity: 0.85; }
+  padding: 6px 10px;
+  background: ${THEME.alpha(THEME.accent.red, 0.08)};
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 8px;
+  text-align: center;
+  border: 1px solid ${THEME.alpha(THEME.accent.red, 0.15)};
 `;
 
 /* ═══════════════════════════════════════════
@@ -218,11 +223,10 @@ interface Recommendation {
 }
 
 interface CostInfo {
-  dft: number;
+  ses: number;
   energy: number;
 }
 
-/** Maps SystemKey → contract string name for getUpgradeCost */
 const SYS_TO_CONTRACT: Record<SystemKey, string> = {
   energyCollector: 'collector',
   weapon: 'weapon',
@@ -265,27 +269,30 @@ export function UpgradeRecommendation() {
   const { t } = useI18n();
   const civ = useGameStore(s => s.playerCiv);
   const loading = useGameStore(s => s.loading);
-  const dftNum = parseFloat(useGameStore(s => s.dftBalance));
+  const error = useGameStore(s => s.error);
+  const sesNum = parseFloat(useGameStore(s => s.sesBalance));
   const address = useGameStore(s => s.address);
   const ct = useContract();
-  const { upgradeSystem } = useGameActions();
+  const { upgradeSystem, clearError } = useGameActions();
+
+  const [confirmSystem, setConfirmSystem] = useState<SystemKey | null>(null);
 
   /* ── Fetch real upgrade costs from contract ── */
   const { data: realCosts, isFetching: costLoading } = useQuery({
     queryKey: ['upgradeCosts', address, civ?.energyCollectorLv, civ?.weaponLv, civ?.shieldLv, civ?.radarLv, civ?.engineLv],
     queryFn: async (): Promise<Record<string, CostInfo> | null> => {
-      if (!ct.darkForest || !address || ct.isSimulated) return null;
+      if (!ct.game || !address || ct.isSimulated) return null;
       const names = ['collector', 'weapon', 'shield', 'radar', 'engine'];
       const results = await Promise.all(
-        names.map(name => ct.darkForest!.getUpgradeCost(address, name))
+        names.map(name => ct.game!.getUpgradeCost(address, name))
       );
       const map: Record<string, CostInfo> = {};
       names.forEach((name, i) => {
-        map[name] = { dft: Number(results[i].dft) / 1e18, energy: Number(results[i].energy) };
+        map[name] = { ses: Number(results[i].ses) / 1e18, energy: Number(results[i].energy) };
       });
       return map;
     },
-    enabled: !!ct.darkForest && !!address && !ct.isSimulated,
+    enabled: !!ct.game && !!address && !ct.isSimulated,
     staleTime: 10_000,
     refetchInterval: 15_000,
   });
@@ -308,18 +315,35 @@ export function UpgradeRecommendation() {
 
   if (!civ || recs.length === 0) return null;
 
+  const handleConfirmUpgrade = () => {
+    if (confirmSystem) upgradeSystem(confirmSystem);
+    setConfirmSystem(null);
+  };
+
+  const selectedForUpgrade = confirmSystem ? recs.find(r => r.key === confirmSystem) : null;
+
   return (
     <Panel>
       <SectionTitle>{t('nav.tech')}</SectionTitle>
 
-      {/* If contract not available, show nothing (no estimated fallback) */}
-      {!realCosts && !costLoading && ct.darkForest && address && (
+      {/* Loading overlay */}
+      {loading && <LoadOverlay><LoadingOverlay message={t('upgrade.btn')} color={THEME.accent.green} transparent /></LoadOverlay>}
+
+      {/* Error banner */}
+      {error && (
+        <ErrorBanner onClick={clearError}>
+          {t('hud.error_dismiss', { msg: error })}
+        </ErrorBanner>
+      )}
+
+      {/* Contract unavailable */}
+      {!realCosts && !costLoading && ct.game && address && (
         <div style={{ color: THEME.text.secondary, fontSize: '0.75rem', textAlign: 'center', padding: 12 }}>
           {t('upgrade.unavailable')}
         </div>
       )}
 
-      {/* Loading state */}
+      {/* Loading */}
       {costLoading && (
         <div style={{ color: THEME.text.secondary, fontSize: '0.75rem', textAlign: 'center', padding: 12 }}>
           {t('upgrade.loading')}
@@ -328,14 +352,13 @@ export function UpgradeRecommendation() {
 
       {realCosts && recs.map((r, i) => {
         const contractCost = realCosts[r.sysName];
-        const costDFT = contractCost.dft;
+        const costSES = contractCost.ses;
         const costEnergy = contractCost.energy;
-        const affordable = dftNum >= costDFT;
-        const pct = dftNum > 0 ? (dftNum / costDFT) * 100 : 0;
+        const affordable = sesNum >= costSES;
+        const pct = sesNum > 0 ? (sesNum / costSES) * 100 : 0;
 
         return (
           <Card key={r.key} $color={r.color} $highlight={i === 0} $affordable={affordable}>
-            {/* Header: name + level + highlight tag */}
             <CardHeader>
               <CardTitle>
                 {r.icon} {r.name}
@@ -344,7 +367,6 @@ export function UpgradeRecommendation() {
               {i === 0 && <HighlightTag $color={r.color}>{t('upgrade.recommend_badge')}</HighlightTag>}
             </CardHeader>
 
-            {/* Stats: current → next */}
             <StatRow>
               <StatBox>
                 <StatBoxLabel>{t('upgrade.current')}</StatBoxLabel>
@@ -361,26 +383,47 @@ export function UpgradeRecommendation() {
               </StatBox>
             </StatRow>
 
-            {/* Cost bar */}
             <CostRow>
               <CostBarTrack>
                 <CostBarFill $color={affordable ? THEME.accent.green : THEME.accent.red} $pct={pct} />
               </CostBarTrack>
               <CostLabel $affordable={affordable}>
-                {dftNum.toFixed(1)} / {costDFT.toFixed(2)} DFT
-                {costEnergy > 0 && <EnergyCostBadge>⚡{costEnergy.toLocaleString()}</EnergyCostBadge>}
+                {fmtCompact(sesNum)} / {fmt(costSES, 2)} SES
+                {costEnergy > 0 && <EnergyCostBadge>⚡{fmt(costEnergy)}</EnergyCostBadge>}
               </CostLabel>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 {costLoading && <LoadingCost>⟳</LoadingCost>}
-                <UpgradeBtn $color={r.color} $disabled={loading || !affordable}
-                  onClick={() => upgradeSystem(r.key)}>
+                <ActionButton variant="primary" disabled={loading || !affordable}
+                  onClick={() => setConfirmSystem(r.key)}>
                   {t('upgrade.btn')}
-                </UpgradeBtn>
+                </ActionButton>
               </div>
             </CostRow>
           </Card>
         );
       })}
+
+      {/* TxConfirm */}
+      <TxConfirm
+        open={!!confirmSystem}
+        title={`⬆️ ${t('hud.confirm_upgrade')} ${selectedForUpgrade ? selectedForUpgrade.name : ''}`}
+        icon="⬆️"
+        onConfirm={handleConfirmUpgrade}
+        onCancel={() => setConfirmSystem(null)}
+        confirmVariant="primary"
+        confirmLabel={t('hud.confirm_upgrade')}
+        loading={loading}
+      >
+        {selectedForUpgrade && (
+          <>
+            {t('upgrade.btn')} {selectedForUpgrade.name} Lv.
+            {selectedForUpgrade.lv} → {selectedForUpgrade.lv + 1}<br />
+            {realCosts ? `${t('hud.cost')}: ${fmt(Number(realCosts[selectedForUpgrade.sysName]?.ses ?? 0), 2)} SES${Number(realCosts[selectedForUpgrade.sysName]?.energy ?? 0) > 0 ? ` + ${fmt(Number(realCosts[selectedForUpgrade.sysName].energy))}⚡` : ''}` : ''}
+          </>
+        )}
+      </TxConfirm>
     </Panel>
   );
 }
+
+
