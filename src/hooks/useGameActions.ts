@@ -121,9 +121,10 @@ export function useGameActions() {
         let tx;
         if (referrer) {
           const refAddr = checksumAddress(referrer.trim());
-          tx = await ct.game!.createCivilization(name.trim(), refAddr, overrides);
+          // 使用完整签名消除重载歧义 (ethers v6 ambiguous function 错误)
+          tx = await ct.game!['createCivilization(string,address)'](name.trim(), refAddr, overrides);
         } else {
-          tx = await ct.game!.createCivilization(name.trim(), overrides);
+          tx = await ct.game!['createCivilization(string)'](name.trim(), overrides);
         }
         await tx.wait();
 
