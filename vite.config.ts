@@ -1,9 +1,23 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
+import { execSync } from 'node:child_process';
+
+function getCommitHash(): string {
+  try {
+    return execSync('git rev-parse --short HEAD', { encoding: 'utf-8' }).trim();
+  } catch {
+    return 'dev';
+  }
+}
+
+const commitHash = getCommitHash();
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    __APP_COMMIT__: JSON.stringify(commitHash),
+  },
   resolve: {
     alias: {
       // bun workspace 不创建 node_modules symlink，手动映射 shared 包

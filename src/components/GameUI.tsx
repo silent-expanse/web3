@@ -383,6 +383,7 @@ function DesktopLayout() {
         <LoreFooterEpoch>
           {t('lore.epoch_label')} #{'—'} · {t('lore.engine_status')}
         </LoreFooterEpoch>
+        <LoreFooterVersion>v0.1.0 · {__APP_COMMIT__}</LoreFooterVersion>
       </LoreFooter>
     </DashboardContainer>
   );
@@ -413,6 +414,13 @@ const LoreFooterEpoch = styled.span`
   font-size: 0.55rem;
   font-family: 'Courier New', monospace;
   letter-spacing: 1px;
+  white-space: nowrap;
+`;
+
+const LoreFooterVersion = styled.span`
+  color: ${THEME.alpha(THEME.text.secondary, 0.35)};
+  font-size: 0.55rem;
+  font-family: 'Courier New', monospace;
   white-space: nowrap;
 `;
 
@@ -561,6 +569,7 @@ function MobileLayout() {
         <LoreFooterEpoch>
           {t('lore.epoch_label')} #{'—'} · {t('lore.engine_status')}
         </LoreFooterEpoch>
+        <LoreFooterVersion>v0.1.0 · {__APP_COMMIT__}</LoreFooterVersion>
       </LoreFooter>
     </MobileContainer>
   );
