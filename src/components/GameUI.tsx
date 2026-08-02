@@ -54,13 +54,13 @@ const DashboardContainer = styled.div`
 const TopBar = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 6px 16px;
-  padding-top: calc(env(safe-area-inset-top, 0px) + 6px);
+  gap: 14px;
+  padding: 8px 16px;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
   background: ${THEME.alpha(THEME.card, 0.8)};
   border-bottom: 1px solid ${THEME.border};
   flex-shrink: 0;
-  min-height: 44px;
+  min-height: 56px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
@@ -69,7 +69,7 @@ const TopBar = styled.div`
 
 const CivName = styled.span`
   color: ${THEME.accent.green};
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-family: 'Courier New', monospace;
   font-weight: bold;
   white-space: nowrap;
@@ -78,7 +78,7 @@ const CivName = styled.span`
 
 const CivAddr = styled.span`
   color: ${THEME.text.secondary};
-  font-size: 0.7rem;
+  font-size: 0.78rem;
   font-family: 'Courier New', monospace;
   flex-shrink: 0;
 `;
@@ -86,11 +86,11 @@ const CivAddr = styled.span`
 const Pill = styled.div<{ $color: string }>`
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   background: ${({ $color }) => THEME.alpha($color, 0.1)};
   border: 1px solid ${({ $color }) => THEME.alpha($color, 0.2)};
   border-radius: 4px;
-  padding: 2px 8px;
+  padding: 4px 10px;
   white-space: nowrap;
   flex-shrink: 0;
   font-family: 'Courier New', monospace;
@@ -98,12 +98,12 @@ const Pill = styled.div<{ $color: string }>`
 
 const PillLabel = styled.span`
   color: ${THEME.text.secondary};
-  font-size: 0.7rem;
+  font-size: 0.75rem;
 `;
 
 const PillValue = styled.span<{ $color: string }>`
   color: ${({ $color }) => $color};
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   font-weight: bold;
 `;
 
@@ -113,8 +113,8 @@ const DailyClaimBtn = styled.button<{ $canClaim: boolean }>`
   border-radius: 4px;
   color: ${({ $canClaim }) => $canClaim ? THEME.accent.gold : THEME.text.secondary};
   font-family: 'Courier New', monospace;
-  font-size: 0.7rem;
-  padding: 2px 8px;
+  font-size: 0.76rem;
+  padding: 4px 10px;
   cursor: ${({ $canClaim }) => $canClaim ? 'pointer' : 'default'};
   white-space: nowrap;
   flex-shrink: 0;
@@ -161,7 +161,7 @@ const NavBtn = styled.button<{ $active: boolean }>`
 const TopBarLink = styled.a`
   color: ${THEME.text.secondary};
   font-family: 'Courier New', monospace;
-  font-size: 0.7rem;
+  font-size: 0.78rem;
   text-decoration: none;
   white-space: nowrap;
   flex-shrink: 0;
@@ -175,8 +175,8 @@ const TopBarLangBtn = styled.button`
   border-radius: 3px;
   color: ${THEME.text.secondary};
   font-family: 'Courier New', monospace;
-  font-size: 0.65rem;
-  padding: 2px 6px;
+  font-size: 0.72rem;
+  padding: 4px 8px;
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
