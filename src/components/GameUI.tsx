@@ -395,31 +395,33 @@ const LoreFooter = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 16px;
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
-  background: ${THEME.alpha(THEME.card, 0.6)};
-  border-top: 1px solid ${THEME.alpha(THEME.accent.green, 0.08)};
-  min-height: 28px;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 20px;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+  background: ${THEME.alpha(THEME.card, 0.75)};
+  border-top: 1px solid ${THEME.alpha(THEME.accent.green, 0.16)};
+  min-height: 48px;
 `;
 
 const LoreFooterText = styled.span`
-  color: ${THEME.alpha(THEME.text.secondary, 0.5)};
-  font-size: 0.6rem;
+  color: ${THEME.alpha(THEME.text.secondary, 0.78)};
+  font-size: 0.8rem;
   font-family: 'Courier New', monospace;
   font-style: italic;
 `;
 
 const LoreFooterEpoch = styled.span`
-  color: ${THEME.alpha(THEME.accent.green, 0.35)};
-  font-size: 0.55rem;
+  color: ${THEME.alpha(THEME.accent.green, 0.6)};
+  font-size: 0.72rem;
   font-family: 'Courier New', monospace;
   letter-spacing: 1px;
   white-space: nowrap;
 `;
 
 const LoreFooterVersion = styled.span`
-  color: ${THEME.alpha(THEME.text.secondary, 0.35)};
-  font-size: 0.55rem;
+  color: ${THEME.alpha(THEME.text.secondary, 0.5)};
+  font-size: 0.68rem;
   font-family: 'Courier New', monospace;
   white-space: nowrap;
 `;
