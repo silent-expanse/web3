@@ -18,7 +18,21 @@ import { t } from '../i18n';
  */
 export function calcCollectRate(lv: number): number {
   if (lv <= 1) return GAME.BASE_COLLECT;
-  return GAME.BASE_COLLECT + GAME.COLLECT_BONUS * Math.sqrt(lv - 1);
+  // 与合约 _sqrt() 一致：整数平方根（向下取整），Lv3 → 3 + 10×1 = 13
+  return GAME.BASE_COLLECT + GAME.COLLECT_BONUS * isqrt(lv - 1);
+}
+
+/** 整数平方根（牛顿法），精确复刻合约 _sqrt()：⌊√n⌋ */
+function isqrt(n: number): number {
+  if (n <= 0) return 0;
+  let z = n;
+  if (n > 3) {
+    let x = Math.floor(n / 2) + 1;
+    while (x < z) { z = x; x = Math.floor((Math.floor(n / x) + x) / 2); }
+  } else {
+    z = 1;
+  }
+  return z;
 }
 
 /** 攻击力: 900 + 10·lv²  (ATK_BASE=900, ATK_RATE=10) 与合约 _calcAttack() 一致 */
