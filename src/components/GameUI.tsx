@@ -275,6 +275,8 @@ function DesktopLayout() {
   const epochClaimed = useGameStore(s => s.epochClaimed);
   const { t, toggleLang } = useI18n();
   const { claimDailySES } = useGameActions();
+  // 链上 getEnergyCollectRate（÷1e6）——必须在条件 return 之前（React Hooks 规则）
+  const rate = useGameStore(s => s.collectRate);
 
   const sesClaimDisabled = loading || epochClaimed;
 
@@ -288,7 +290,6 @@ function DesktopLayout() {
   }
 
   const shortAddr = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '';
-  const rate = useGameStore(s => s.collectRate); // 链上 getEnergyCollectRate（÷1e6）
   const shieldPct = playerCiv.maxShieldHP > 0
     ? Math.round((playerCiv.shieldHP / playerCiv.maxShieldHP) * 100)
     : 0;
