@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useGameStore } from '../hooks/useGameStore';
@@ -444,10 +444,13 @@ function MobileLayout() {
   const [activeTab, setActiveTab] = useState<TabId | null>(null);
   const [prevConnected, setPrevConnected] = useState(connected);
 
-  if (connected !== prevConnected) {
-    setPrevConnected(connected);
-    if (!connected) setActiveTab(null);
-  }
+  // 账户连接状态变化 → 副作用处理（禁止渲染期间 setState，避免 React #310 hooks 数变化）
+  useEffect(() => {
+    if (connected !== prevConnected) {
+      setPrevConnected(connected);
+      if (!connected) setActiveTab(null);
+    }
+  }, [connected, prevConnected]);
 
   if (!connected) {
     return (

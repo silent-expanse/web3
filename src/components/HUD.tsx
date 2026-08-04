@@ -130,12 +130,9 @@ export function HUD() {
 
   const [confirmAction, setConfirmAction] = useState<{ type: 'upgrade' | 'attack'; system?: SystemKey } | null>(null);
 
-  if (!civ) return null;
-
-  const shortAddr = addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '';
+  // ── 所有 hooks 必须在条件 return 之前（React Hooks 规则，避免 #310）──
   const rate = useGameStore(s => s.collectRate); // 链上 getEnergyCollectRate（÷1e6）
   const atk = useGameStore(s => s.attackPower);  // 链上 getAttackPower
-  const sesNum = parseFloat(ses);
   const isDestroyed = useGameStore(s => s.isDestroyed);
   const collectorDur = useGameStore(s => s.collectorDurability);
   const combatBoost = useGameStore(s => s.combatBoost);
@@ -143,6 +140,9 @@ export function HUD() {
   const defVal = useGameStore(s => s.shieldDefense);
   const speedVal = useGameStore(s => s.speed);
   const radarVal = useGameStore(s => s.radarRange);
+
+  const shortAddr = addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '';
+  const sesNum = parseFloat(ses);
 
   const handleConfirmUpgrade = () => {
     if (confirmAction?.type === 'upgrade' && confirmAction.system) {
@@ -155,25 +155,30 @@ export function HUD() {
     setConfirmAction(null);
   };
 
-  const systems = useMemo(() => [
-    { key: 'energyCollector' as SystemKey, icon: SYSTEMS.energyCollector.icon, title: SYSTEMS.energyCollector.name, lv: civ.energyCollectorLv, color: SYSTEMS.energyCollector.color,
-      bars: [
-        { label: t('hud.collect_rate'), value: rate, rate: fmt(rate, 2) + t('general.per_sec'), color: THEME.accent.green },
-        ...(collectorDur.max > 0 ? [{ label: t('hud.durability'), value: collectorDur.current, max: collectorDur.max, color: THEME.accent.blue }] : []),
-      ] },
-    { key: 'weapon' as SystemKey, icon: SYSTEMS.weapon.icon, title: SYSTEMS.weapon.name, lv: civ.weaponLv, color: SYSTEMS.weapon.color,
-      bars: [{ label: t('hud.attack_power'), value: atk, color: THEME.accent.red }] },
-    { key: 'shield' as SystemKey, icon: SYSTEMS.shield.icon, title: SYSTEMS.shield.name, lv: civ.shieldLv, color: SYSTEMS.shield.color,
-      bars: [
-        { label: t('hud.shield'), value: civ.shieldHP, max: civ.maxShieldHP, color: THEME.accent.shield },
-        { label: t('hud.defense'), value: defVal, color: SYSTEMS.shield.color },
-      ] },
-    { key: 'radar' as SystemKey, icon: SYSTEMS.radar.icon, title: SYSTEMS.radar.name, lv: civ.radarLv, color: SYSTEMS.radar.color,
-      bars: [{ label: t('hud.scan_range'), value: radarVal || civ.scanRange, rate: (radarVal || civ.scanRange) + t('general.ls'), color: THEME.accent.blue }] },
-    { key: 'engine' as SystemKey, icon: SYSTEMS.engine.icon, title: SYSTEMS.engine.name, lv: civ.engineLv, color: SYSTEMS.engine.color,
-      bars: [{ label: t('hud.speed'), value: speedVal, rate: speedVal + t('general.ls_h'), color: SYSTEMS.engine.color }],
-    },
-  ], [civ, rate, atk, defVal, speedVal, radarVal, t]);
+  const systems = useMemo(() => {
+    const c = civ!; // hooks 必须在条件 return 之前（React 规则），civ 为 null 时组件提前返回不渲染此处
+    return [
+      { key: 'energyCollector' as SystemKey, icon: SYSTEMS.energyCollector.icon, title: SYSTEMS.energyCollector.name, lv: c.energyCollectorLv, color: SYSTEMS.energyCollector.color,
+        bars: [
+          { label: t('hud.collect_rate'), value: rate, rate: fmt(rate, 2) + t('general.per_sec'), color: THEME.accent.green },
+          ...(collectorDur.max > 0 ? [{ label: t('hud.durability'), value: collectorDur.current, max: collectorDur.max, color: THEME.accent.blue }] : []),
+        ] },
+      { key: 'weapon' as SystemKey, icon: SYSTEMS.weapon.icon, title: SYSTEMS.weapon.name, lv: c.weaponLv, color: SYSTEMS.weapon.color,
+        bars: [{ label: t('hud.attack_power'), value: atk, color: THEME.accent.red }] },
+      { key: 'shield' as SystemKey, icon: SYSTEMS.shield.icon, title: SYSTEMS.shield.name, lv: c.shieldLv, color: SYSTEMS.shield.color,
+        bars: [
+          { label: t('hud.shield'), value: c.shieldHP, max: c.maxShieldHP, color: THEME.accent.shield },
+          { label: t('hud.defense'), value: defVal, color: SYSTEMS.shield.color },
+        ] },
+      { key: 'radar' as SystemKey, icon: SYSTEMS.radar.icon, title: SYSTEMS.radar.name, lv: c.radarLv, color: SYSTEMS.radar.color,
+        bars: [{ label: t('hud.scan_range'), value: radarVal || c.scanRange, rate: (radarVal || c.scanRange) + t('general.ls'), color: THEME.accent.blue }] },
+      { key: 'engine' as SystemKey, icon: SYSTEMS.engine.icon, title: SYSTEMS.engine.name, lv: c.engineLv, color: SYSTEMS.engine.color,
+        bars: [{ label: t('hud.speed'), value: speedVal, rate: speedVal + t('general.ls_h'), color: SYSTEMS.engine.color }],
+      },
+    ];
+  }, [civ, rate, atk, defVal, speedVal, radarVal, t]);
+
+  if (!civ) return null;
 
   return (
     <Container $mobile={isMobile}>
