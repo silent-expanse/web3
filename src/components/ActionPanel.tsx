@@ -326,7 +326,7 @@ export function ActionPanel() {
             {playerCiv && (
               <div style={{
                 color: THEME.accent.blue, fontSize: '0.68rem', fontFamily: "'Courier New', monospace",
-                marginBottom: 6, opacity: 0.8,
+                marginBottom: 6, opacity: 0.8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
               }}>
                 {t('hud.location')}: ({fmtCoord(playerCiv.x)}, {fmtCoord(playerCiv.y)}, {fmtCoord(playerCiv.z)})
               </div>

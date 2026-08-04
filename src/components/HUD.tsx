@@ -191,9 +191,6 @@ export function HUD() {
           <div style={{ flex: 1 }}>
             <Name>{civ.name}</Name>
             <Sub>{shortAddr}</Sub>
-            <Sub style={{ color: THEME.accent.blue, marginTop: 4 }}>
-              {t('hud.location')}: ({fmtCoord(civ.x)}, {fmtCoord(civ.y)}, {fmtCoord(civ.z)})
-            </Sub>
           </div>
           {target && (
             <ActionButton variant="danger" disabled={!canAttack}
@@ -204,6 +201,10 @@ export function HUD() {
             </ActionButton>
           )}
         </Row>
+        {/* 坐标独占一行，nowrap 避免长文本在网格内被拆成多行 */}
+        <Sub style={{ color: THEME.accent.blue, whiteSpace: 'nowrap', marginBottom: 10 }}>
+          {t('hud.location')}: ({fmtCoord(civ.x)}, {fmtCoord(civ.y)}, {fmtCoord(civ.z)})
+        </Sub>
         <Row>
           <StatPill $color={THEME.accent.gold}>
             <StatLabel>{t('hud.ses')}</StatLabel>
