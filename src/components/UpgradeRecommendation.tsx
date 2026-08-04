@@ -8,7 +8,7 @@ import { ActionButton } from './ui/ActionButton';
 import { TxConfirm } from './ui/TxConfirm';
 import { LoadingOverlay } from './Spinner';
 import { THEME } from '../theme';
-import { type SystemKey, SYSTEMS } from '../utils/constants';
+import { type SystemKey, SYSTEMS, GAME } from '../utils/constants';
 import { useI18n } from '../hooks/useI18n';
 import { fmt, fmtCompact } from '../utils/format';
 
@@ -235,12 +235,15 @@ const SYS_TO_CONTRACT: Record<SystemKey, string> = {
   engine: 'engine',
 };
 
-function calcRecommendation(key: SystemKey, lv: number): { value: number; gain: number; nextValue: number } {
+function calcRecommendation(key: SystemKey, lv: number): { value: number; gain: number; nextValue: number; subGain?: string } {
   const next = lv + 1;
   switch (key) {
     case 'energyCollector': {
       const cur = calcCollectRate(lv), nxt = calcCollectRate(next);
-      return { value: cur, gain: nxt - cur, nextValue: nxt };
+      const gain = nxt - cur;
+      // 第二收益：耐久上限 +DURABILITY_PER_LV 秒（合约 _calcMaxDurability 线性增长，每次升级都有）
+      // 速率受整数 sqrt 平台期影响可能为 0，耐久收益保持可见，避免「升级无收益」错觉
+      return { value: cur, gain, nextValue: nxt, subGain: `+${GAME.DURABILITY_PER_LV}s 耐久` };
     }
     case 'weapon': {
       const cur = calcAttackPower(lv), nxt = calcAttackPower(next);
@@ -379,7 +382,11 @@ export function UpgradeRecommendation() {
               </StatBox>
               <StatBox>
                 <StatBoxLabel>{t('upgrade.gain')}</StatBoxLabel>
-                <StatBoxValue $color={r.color} $next>+{r.gain}</StatBoxValue>
+                <StatBoxValue $color={r.color} $next>
+                  {r.key === 'energyCollector' && r.gain === 0
+                    ? (r.subGain ?? `+${r.gain}`)
+                    : `+${r.gain}`}
+                </StatBoxValue>
               </StatBox>
             </StatRow>
 
