@@ -56,6 +56,7 @@ const ZH: Dict = {
 
   /* ════════════════════ 总览面板（HUD） ════════════════════ */
   'hud.title': '📊 文明状态',
+  'hud.location': '📍 当前坐标',
   'hud.combat_res': '追踪资源',
   'hud.attack_token': '🎯 追踪次数',
   'hud.pending_energy': '📦 待领能量',
@@ -365,6 +366,7 @@ const EN: Dict = {
 
   /* ════════════════════ HUD / Overview ════════════════════ */
   'hud.title': '📊 Status',
+  'hud.location': '📍 Current Coordinates',
   'hud.combat_res': 'Trace Assets',
   'hud.attack_token': '🎯 Traces',
   'hud.pending_energy': '📦 Pending',

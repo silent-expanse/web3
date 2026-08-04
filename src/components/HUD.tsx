@@ -11,7 +11,7 @@ import { TxConfirm } from './ui/TxConfirm';
 import { LoadingOverlay } from './Spinner';
 import { THEME } from '../theme';
 import { useI18n } from '../hooks/useI18n';
-import { fmt, fmtCompact } from '../utils/format';
+import { fmt, fmtCompact, fmtCoord } from '../utils/format';
 
 /* ─── Layout ─── */
 
@@ -191,6 +191,9 @@ export function HUD() {
           <div style={{ flex: 1 }}>
             <Name>{civ.name}</Name>
             <Sub>{shortAddr}</Sub>
+            <Sub style={{ color: THEME.accent.blue, marginTop: 4 }}>
+              {t('hud.location')}: ({fmtCoord(civ.x)}, {fmtCoord(civ.y)}, {fmtCoord(civ.z)})
+            </Sub>
           </div>
           {target && (
             <ActionButton variant="danger" disabled={!canAttack}

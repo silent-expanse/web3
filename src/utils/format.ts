@@ -7,6 +7,15 @@
 const COMPACT_THRESHOLD = 1_000_000;
 
 /**
+ * 坐标显示：int256 大整数，Number 精度有限，用科学计数法展示
+ *   4.879e76 → "4.88e+76"
+ */
+export function fmtCoord(n: number): string {
+  if (!Number.isFinite(n)) return '0';
+  return n.toExponential(2);
+}
+
+/**
  * 格式化数字：大数用 K/M/B，小数截断，整数不带小数点
  *
  * 示例:

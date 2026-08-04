@@ -7,7 +7,7 @@ import { LoadingOverlay } from './Spinner';
 import { ActionButton } from './ui/ActionButton';
 import { useI18n } from '../hooks/useI18n';
 import { THEME } from '../theme';
-import { fmt, fmtCompact } from '../utils/format';
+import { fmt, fmtCompact, fmtCoord } from '../utils/format';
 
 /* ═══════════════════════════════════════════
    Layout
@@ -323,6 +323,14 @@ export function ActionPanel() {
       <Grid>
         {showMove ? (
           <div style={{ gridColumn: '1 / -1' }}>
+            {playerCiv && (
+              <div style={{
+                color: THEME.accent.blue, fontSize: '0.68rem', fontFamily: "'Courier New', monospace",
+                marginBottom: 6, opacity: 0.8,
+              }}>
+                {t('hud.location')}: ({fmtCoord(playerCiv.x)}, {fmtCoord(playerCiv.y)}, {fmtCoord(playerCiv.z)})
+              </div>
+            )}
             <InputRow>
               <Input $mobile={isMobile} placeholder="X" value={tx} onChange={e => setTx(e.target.value)} disabled={loading} />
               <Input $mobile={isMobile} placeholder="Y" value={ty} onChange={e => setTy(e.target.value)} disabled={loading} />
