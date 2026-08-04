@@ -118,48 +118,56 @@ function resetSharedState() {
  * useContract — 统一的合约连接层（全局单例）。
  *
  * - 所有组件共享同一个初始化结果，避免重复 eth_requestAccounts
- * - 监听 `accountsChanged` / `chainChanged`，重建后广播给所有订阅者
- * - contractUnavailable = true 时表示合约不可用
+ * - 钱包事件监听注册在模块级（只一次），不随组件挂载/卸载累积
+ * - contractUnavailable = true 表示合约不可达（只读错误态）
  */
+
+// ── 模块级钱包事件监听：只注册一次，任何组件卸载都不移除 ──
+let listenersRegistered = false;
+const subscribers = new Set<(s: ContractState) => void>();
+function broadcastState() {
+  if (sharedState) subscribers.forEach(fn => fn(sharedState!));
+}
+function ensureWindowListeners() {
+  if (listenersRegistered || typeof window === 'undefined') return;
+  listenersRegistered = true;
+  const handleAccountsChanged = (accounts: unknown) => {
+    resetSharedState();
+    if (!Array.isArray(accounts) || accounts.length === 0) {
+      sharedState = createInitialState();
+      broadcastState();
+      return;
+    }
+    getSharedState().then(() => broadcastState());
+  };
+  const handleChainChanged = () => {
+    resetSharedState();
+    getSharedState().then(() => broadcastState());
+  };
+  if (window.ethereum?.on) {
+    window.ethereum.on('accountsChanged', handleAccountsChanged);
+    window.ethereum.on('chainChanged', handleChainChanged);
+  }
+}
+
 export function useContract(): ContractState {
   const [state, setState] = useState<ContractState>(createInitialState);
 
   useEffect(() => {
     let cancelled = false;
 
-    // 订阅单例状态
     const apply = (s: ContractState | null) => {
       if (!cancelled && s) setState(s);
     };
 
-    // 初始加载（模块级单例只触发一次 getSigner）
+    // 订阅单例状态；模块级监听重建后广播给所有订阅者
+    subscribers.add(apply);
     getSharedState().then(apply);
-
-    // ── 统一监听钱包事件, 重建单例后广播 ──
-    const handleAccountsChanged = (accounts: unknown) => {
-      if (!Array.isArray(accounts) || accounts.length === 0) {
-        resetSharedState();
-        if (!cancelled) setState(createInitialState());
-        return;
-      }
-      resetSharedState();
-      getSharedState().then(apply);
-    };
-
-    const handleChainChanged = () => {
-      resetSharedState();
-      getSharedState().then(apply);
-    };
-
-    if (window.ethereum?.on) {
-      window.ethereum.on('accountsChanged', handleAccountsChanged);
-      window.ethereum.on('chainChanged', handleChainChanged);
-    }
+    ensureWindowListeners();
 
     return () => {
       cancelled = true;
-      // 注意: 不 removeListener — 单例模式要求事件监听常驻,
-      // 组件卸载时移除会导致其他组件失去事件
+      subscribers.delete(apply);
     };
   }, []);
 
