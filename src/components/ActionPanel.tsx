@@ -267,7 +267,7 @@ export function ActionPanel() {
         </ErrorBanner>
       )}
 
-      {/* === Resource Collection === */}
+      {/* === Resource Production === */}
       <GroupLabel>{t('action.group_collect')}</GroupLabel>
       <Grid>
         {/* Collect Energy — with pending estimate */}
@@ -276,7 +276,11 @@ export function ActionPanel() {
           <ActionLabel $color={THEME.accent.green}>{t('action.collect')}</ActionLabel>
           {pendingCollect > 0 && <ActionBadge $color={THEME.accent.green}>~{fmt(pendingCollect)}</ActionBadge>}
         </ActionCard>
+      </Grid>
 
+      {/* === Reward Settlement (passive accruals, claimed via tx) === */}
+      <GroupLabel>{t('action.group_claim')}</GroupLabel>
+      <Grid>
         {/* Combat Energy Claim */}
         <ActionCard $color={pending > 0 ? THEME.accent.gold : THEME.text.secondary} $disabled={loading || pending <= 0}
           onClick={() => !loading && pending > 0 && claimCombatEnergy()}>
@@ -341,23 +345,17 @@ export function ActionPanel() {
           <ActionIcon>🌌</ActionIcon>
           <ActionLabel $color="#ff66aa">{t('action.jump')}</ActionLabel>
         </ActionCard>
+        {/* Cancel move */}
+        <ActionCard $color={THEME.accent.red} $disabled={loading || showMove} onClick={() => !loading && !showMove && cancelMove()}>
+          <ActionIcon>⏹️</ActionIcon>
+          <ActionLabel $color={THEME.accent.red}>{t('action.cancel_move')}</ActionLabel>
+        </ActionCard>
       </Grid>
-
-      {/* Cancel move — standalone danger card */}
-      {!showMove && (
-        <div style={{ marginTop: 6 }}>
-          <ActionCard $color={THEME.accent.red} $disabled={loading} onClick={() => !loading && cancelMove()}
-            style={{ display: 'flex', flexDirection: 'row', minHeight: 44 }}>
-            <ActionIcon>⏹️</ActionIcon>
-            <ActionLabel $color={THEME.accent.red}>{t('action.cancel_move')}</ActionLabel>
-          </ActionCard>
-        </div>
-      )}
 
       <Divider />
 
-      {/* === Shield === */}
-      <GroupLabel>{t('action.group_shield')}</GroupLabel>
+      {/* === System Maintenance === */}
+      <GroupLabel>{t('action.group_repair')}</GroupLabel>
       <Grid>
         <ActionCard $color={THEME.accent.blue} $disabled={loading} onClick={() => !loading && repairShield()}>
           <ActionIcon>🛡️</ActionIcon>
