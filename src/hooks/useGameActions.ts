@@ -139,7 +139,7 @@ export function useGameActions() {
           address: addr,
           playerCiv: civ,
           entryFee: formatEther(feeWei),
-          lastCollectTime: Date.now(),
+          lastCollectTime: raw.lastUpdateTime ? Number(raw.lastUpdateTime) * 1000 : Date.now(),
         });
 
         useGameStore.getState().claimSES();
@@ -267,7 +267,8 @@ export function useGameActions() {
       civ.shieldHP = Number(await ct.game!.getCurrentShieldHP(addr));
       useGameStore.setState(s => ({
         playerCiv: s.playerCiv ? { ...s.playerCiv, ...civ } : null,
-        lastCollectTime: Date.now(),
+        // 用合约返回的 lastUpdateTime（秒→ms），保持与轮询基准一致
+        lastCollectTime: raw.lastUpdateTime ? Number(raw.lastUpdateTime) * 1000 : Date.now(),
       }));
       useGameStore.getState().addSuccessToast(t('toast.collect_success', { amount: Math.floor(calcCollectRate(raw.energyCollectorLv ?? 1) * 10) }));
     } catch (e) {

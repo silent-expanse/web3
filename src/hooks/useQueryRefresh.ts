@@ -77,6 +77,9 @@ export function useCivPolling() {
           useGameStore.setState({
             playerCiv: civ,
             isDestroyed: Boolean(raw.isRuins ?? false),
+            // 链上 lastUpdateTime 只在采集时更新 (Admin.sol:49)，
+            // 是 pending 采集估算的正确基准（秒 → ms，与 Date.now() 同单位）
+            lastCollectTime: raw.lastUpdateTime ? Number(raw.lastUpdateTime) * 1000 : Date.now(),
           });
         }
 
