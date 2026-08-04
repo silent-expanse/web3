@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import styled from 'styled-components';
 import { useGameStore } from '../hooks/useGameStore';
 import { useContract } from '../hooks/useContract';
-import { useGameActions, calcCollectRate, calcAttackPower, calcShieldDefense, calcRadarRange, calcSpeed } from '../hooks/useGameActions';
+import { useGameActions } from '../hooks/useGameActions';
 import { ActionButton } from './ui/ActionButton';
 import { TxConfirm } from './ui/TxConfirm';
 import { LoadingOverlay } from './Spinner';
@@ -225,6 +225,8 @@ interface Recommendation {
 interface CostInfo {
   ses: number;
   energy: number;
+  curValue: number;
+  nextValue: number;
 }
 
 const SYS_TO_CONTRACT: Record<SystemKey, string> = {
@@ -234,35 +236,6 @@ const SYS_TO_CONTRACT: Record<SystemKey, string> = {
   radar: 'radar',
   engine: 'engine',
 };
-
-function calcRecommendation(key: SystemKey, lv: number): { value: number; gain: number; nextValue: number; subGain?: string } {
-  const next = lv + 1;
-  switch (key) {
-    case 'energyCollector': {
-      const cur = calcCollectRate(lv), nxt = calcCollectRate(next);
-      const gain = nxt - cur;
-      // 第二收益：耐久上限 +DURABILITY_PER_LV 秒（合约 _calcMaxDurability 线性增长，每次升级都有）
-      // 速率受整数 sqrt 平台期影响可能为 0，耐久收益保持可见，避免「升级无收益」错觉
-      return { value: cur, gain, nextValue: nxt, subGain: `+${GAME.DURABILITY_PER_LV}s 耐久` };
-    }
-    case 'weapon': {
-      const cur = calcAttackPower(lv), nxt = calcAttackPower(next);
-      return { value: cur, gain: nxt - cur, nextValue: nxt };
-    }
-    case 'shield': {
-      const cur = calcShieldDefense(lv), nxt = calcShieldDefense(next);
-      return { value: cur, gain: nxt - cur, nextValue: nxt };
-    }
-    case 'radar': {
-      const cur = calcRadarRange(lv), nxt = calcRadarRange(next);
-      return { value: cur, gain: nxt - cur, nextValue: nxt };
-    }
-    case 'engine': {
-      const cur = calcSpeed(lv), nxt = calcSpeed(next);
-      return { value: cur, gain: nxt - cur, nextValue: nxt };
-    }
-  }
-}
 
 /* ═══════════════════════════════════════════
    Component
@@ -280,41 +253,60 @@ export function UpgradeRecommendation() {
 
   const [confirmSystem, setConfirmSystem] = useState<SystemKey | null>(null);
 
-  /* ── Fetch real upgrade costs from contract ── */
+  /* ── Fetch real upgrade costs + stat preview from contract ── */
   const { data: realCosts, isFetching: costLoading } = useQuery({
     queryKey: ['upgradeCosts', address, civ?.energyCollectorLv, civ?.weaponLv, civ?.shieldLv, civ?.radarLv, civ?.engineLv],
     queryFn: async (): Promise<Record<string, CostInfo> | null> => {
-      if (!ct.game || !address || ct.isSimulated) return null;
+      if (!ct.game || !address) return null;
       const names = ['collector', 'weapon', 'shield', 'radar', 'engine'];
       const results = await Promise.all(
         names.map(name => ct.game!.getUpgradeCost(address, name))
       );
+      // 链上当前/下一级属性值（避免前端重复实现公式）
+      const previews = await Promise.all(
+        names.map(name => ct.game!.getUpgradePreview(address, name))
+      );
       const map: Record<string, CostInfo> = {};
       names.forEach((name, i) => {
-        map[name] = { ses: Number(results[i].ses) / 1e18, energy: Number(results[i].energy) };
+        map[name] = {
+          ses: Number(results[i].ses) / 1e18,
+          energy: Number(results[i].energy),
+          curValue: Number(previews[i].current),
+          nextValue: Number(previews[i].next),
+        };
       });
       return map;
     },
-    enabled: !!ct.game && !!address && !ct.isSimulated,
+    enabled: !!ct.game && !!address,
     staleTime: 10_000,
     refetchInterval: 15_000,
   });
 
-  /* ── Build recommendation list ── */
+  /* ── Build recommendation list (all values from chain preview) ── */
   const recs = useMemo(() => {
-    if (!civ) return [];
+    if (!civ || !realCosts) return [];
     const keys: SystemKey[] = ['energyCollector', 'weapon', 'shield', 'radar', 'engine'];
     const lvs = [civ.energyCollectorLv, civ.weaponLv, civ.shieldLv, civ.radarLv, civ.engineLv];
     return keys
       .map((key, i) => {
         const lv = lvs[i];
         const sys = SYSTEMS[key];
-        const rec = calcRecommendation(key, lv);
-        return { key, lv, name: sys.name, icon: sys.icon, color: sys.color, sysName: SYS_TO_CONTRACT[key], ...rec };
+        const sysName = SYS_TO_CONTRACT[key];
+        const preview = realCosts[sysName];
+        if (!preview) return null;
+        // collector 速率是定点 ×1e6 → ÷1e6 显示；其余为普通值
+        const divide = key === 'energyCollector' ? 1e6 : 1;
+        const cur = preview.curValue / divide;
+        const nxt = preview.nextValue / divide;
+        const gain = nxt - cur;
+        // 采集器第二收益：耐久上限 +DURABILITY_PER_LV 秒（合约线性增长，每次升级都有）
+        const subGain = key === 'energyCollector' ? `+${GAME.DURABILITY_PER_LV}s 耐久` : undefined;
+        return { key, lv, name: sys.name, icon: sys.icon, color: sys.color, sysName, value: cur, nextValue: nxt, gain, subGain };
       })
+      .filter((r): r is NonNullable<typeof r> => r !== null)
       .filter(r => !isNaN(r.gain) && r.lv < 999)
       .sort((a, b) => b.gain - a.gain);
-  }, [civ]);
+  }, [civ, realCosts]);
 
   if (!civ || recs.length === 0) return null;
 

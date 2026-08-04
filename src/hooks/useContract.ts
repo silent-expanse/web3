@@ -11,8 +11,8 @@ export interface ContractState {
   alliance: Contract | null;
   dailyMinter: Contract | null;
   isReady: boolean;
-  /** true = no deployed contract found, using local simulation */
-  isSimulated: boolean;
+  /** true = contract unreachable (no wallet / no deployed addresses) — read-only error state */
+  contractUnavailable: boolean;
   error: string | null;
 }
 
@@ -25,7 +25,7 @@ function createInitialState(): ContractState {
     alliance: null,
     dailyMinter: null,
     isReady: false,
-    isSimulated: true,
+    contractUnavailable: true,
     error: null,
   };
 }
@@ -51,7 +51,7 @@ async function getSharedState(): Promise<ContractState | null> {
   initPromise = (async () => {
     try {
       if (!window.ethereum) {
-        sharedState = { ...createInitialState(), isReady: true, isSimulated: true };
+        sharedState = { ...createInitialState(), isReady: true, contractUnavailable: true };
         return sharedState;
       }
 
@@ -70,12 +70,12 @@ async function getSharedState(): Promise<ContractState | null> {
 
       const hasAddresses = !!GAME.SILENT_EXPANSE && !!GAME.SES_TOKEN && !!GAME.ALLIANCE;
       if (!hasAddresses) {
-        sharedState = { ...createInitialState(), isReady: true, isSimulated: true };
+        sharedState = { ...createInitialState(), isReady: true, contractUnavailable: true };
         return sharedState;
       }
 
       if (!signer) {
-        sharedState = { ...createInitialState(), isReady: true, isSimulated: true, error: 'Wallet not connected' };
+        sharedState = { ...createInitialState(), isReady: true, contractUnavailable: true, error: 'Wallet not connected' };
         return sharedState;
       }
 
@@ -89,7 +89,7 @@ async function getSharedState(): Promise<ContractState | null> {
           ? new Contract(GAME.DAILY_MINTER, DAILY_MINTER_ABI, signer)
           : null,
         isReady: true,
-        isSimulated: false,
+        contractUnavailable: false,
         error: null,
       };
       return sharedState;
@@ -119,7 +119,7 @@ function resetSharedState() {
  *
  * - 所有组件共享同一个初始化结果，避免重复 eth_requestAccounts
  * - 监听 `accountsChanged` / `chainChanged`，重建后广播给所有订阅者
- * - isSimulated = true 时表示合约不可用
+ * - contractUnavailable = true 时表示合约不可用
  */
 export function useContract(): ContractState {
   const [state, setState] = useState<ContractState>(createInitialState);

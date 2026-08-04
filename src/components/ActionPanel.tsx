@@ -195,8 +195,6 @@ export function ActionPanel() {
   const sesBalance = useGameStore(s => s.sesBalance);
   const playerCiv = useGameStore(s => s.playerCiv);
   const collectRate = useGameStore(s => s.collectRate);
-  const lastCollectTime = useGameStore(s => s.lastCollectTime);
-  const collectorDurability = useGameStore(s => s.collectorDurability);
   const currentEpoch = useGameStore(s => s.currentEpoch);
   const epochClaimed = useGameStore(s => s.epochClaimed);
   const epochEndTime = useGameStore(s => s.epochEndTime);
@@ -216,13 +214,9 @@ export function ActionPanel() {
 
   const hasShield = playerCiv && playerCiv.shieldHP > 0;
 
-  /* ── Energy collection pending estimate ──
-   * 对齐链上 _collectEnergy (Admin.sol:43-45):
-   *   pending = min(now - lastUpdateTime, collectorDurability) × collectRate
-   * lastCollectTime 来自链上 lastUpdateTime（秒），此处统一为 ms 计算。 */
-  const pendingCollect = lastCollectTime > 0 && collectRate > 0
-    ? Math.floor(collectRate * Math.min((Date.now() - lastCollectTime) / 1000, collectorDurability.current))
-    : 0;
+  /* ── Pending collectable energy — 直接读链上 getPendingEnergy（轮询刷新），
+   *    与 _collectEnergy 结算完全一致（含耐久上限封顶）。 */
+  const pendingCollect = useGameStore(s => s.pendingCollect);
 
   /* ── SES epoch ── */
   const epochDistributed = lastDistributedEpoch >= currentEpoch;

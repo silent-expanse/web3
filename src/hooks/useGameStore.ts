@@ -120,6 +120,12 @@ interface GameState {
   collectRate: number;
   collectorDurability: { current: number; max: number };
   combatBoost: number;
+  pendingCollect: number;
+  shieldDefense: number;
+  attackPower: number;
+  attackEnergyCost: number;
+  speed: number;
+  radarRange: number;
   marketOrders: { id: number; price: number; amount: number; seller: string; isMine: boolean }[];
   // 联盟轮询（_ 前缀表来自 useQueryRefresh 的自动写，非手动）
   _allianceMembers: string[];
@@ -178,6 +184,12 @@ export const useGameStore = create<GameState>((set) => ({
   collectRate: 0,
   collectorDurability: { current: 0, max: 0 },
   combatBoost: 0,
+  pendingCollect: 0,
+  shieldDefense: 0,
+  attackPower: 0,
+  attackEnergyCost: 0,
+  speed: 0,
+  radarRange: 0,
   marketOrders: [],
   _allianceMembers: [],
   _allianceTotemLevel: 0,
@@ -200,7 +212,7 @@ export const useGameStore = create<GameState>((set) => ({
     connected: false, address: null, playerCiv: null,
     sesBalance: '0', currentAlliance: null, battleLog: [],
     enemyCivs: new Map(), pendingEnergy: 0, isDestroyed: false, toasts: [], attackBeams: [],
-    lastCollectTime: 0, collectRate: 0, collectorDurability: { current: 0, max: 0 }, combatBoost: 0, marketOrders: [], _allianceMembers: [], _allianceTotemLevel: 0, _allianceTotemEnergy: 0, _allianceTotemUpgradeCost: 0, _allianceIsLeader: false,
+    lastCollectTime: 0, collectRate: 0, collectorDurability: { current: 0, max: 0 }, combatBoost: 0, pendingCollect: 0, shieldDefense: 0, attackPower: 0, attackEnergyCost: 0, speed: 0, radarRange: 0, marketOrders: [], _allianceMembers: [], _allianceTotemLevel: 0, _allianceTotemEnergy: 0, _allianceTotemUpgradeCost: 0, _allianceIsLeader: false,
   currentEpoch: 0, epochClaimed: false, lastDistributedEpoch: 0,
     epochStartTime: 0, epochEndTime: 0, dailyEmission: 0,
   }),

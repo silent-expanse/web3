@@ -38,7 +38,8 @@ export function useCivPolling() {
         const ses = ct.sesToken;
 
         const [civResult, balResult, tokResult, pendingResult,
-               shResult, rateResult, durResult, boostResult] = await Promise.allSettled([
+               shResult, rateResult, durResult, boostResult,
+              pendingCollectResult, defResult, speedResult, radarResult, atkResult, atkCostResult] = await Promise.allSettled([
           df.getCivilization(address),
           ses.balanceOf(address),
           df.getAttackTokenInfo(address),
@@ -50,6 +51,12 @@ export function useCivPolling() {
           df.getEnergyCollectRate(address),
           df.getCollectorDurability(address),
           df.getCombatBoost(address),
+          df.getPendingEnergy(address),
+          df.getShieldDefense(address),
+          df.getSpeed(address),
+          df.getRadarRange(address),
+          df.getAttackPower(address),
+          df.getAttackEnergyCost(address),
         ]);
 
         /* ─── 解析结果 ─── */
@@ -119,9 +126,9 @@ export function useCivPolling() {
           }
         }
 
-        // 5. Energy collect rate
+        // 5. Energy collect rate (contract returns fixed-point ×1e6 → ÷1e6 for /s)
         if (rateResult.status === 'fulfilled') {
-          useGameStore.setState({ collectRate: Number(rateResult.value) });
+          useGameStore.setState({ collectRate: Number(rateResult.value) / 1e6 });
         }
 
         // 6. Collector durability
@@ -133,6 +140,28 @@ export function useCivPolling() {
         // 7. Combat boost
         if (boostResult.status === 'fulfilled') {
           useGameStore.setState({ combatBoost: Number(boostResult.value) });
+        }
+
+        // 8. Pending collectable energy (on-chain exact)
+        if (pendingCollectResult.status === 'fulfilled') {
+          useGameStore.setState({ pendingCollect: Number(pendingCollectResult.value) });
+        }
+
+        // 9. Shield defense / speed / radar range / attack power
+        if (defResult.status === 'fulfilled') {
+          useGameStore.setState({ shieldDefense: Number(defResult.value) });
+        }
+        if (speedResult.status === 'fulfilled') {
+          useGameStore.setState({ speed: Number(speedResult.value) });
+        }
+        if (radarResult.status === 'fulfilled') {
+          useGameStore.setState({ radarRange: Number(radarResult.value) });
+        }
+        if (atkResult.status === 'fulfilled') {
+          useGameStore.setState({ attackPower: Number(atkResult.value) });
+        }
+        if (atkCostResult.status === 'fulfilled') {
+          useGameStore.setState({ attackEnergyCost: Number(atkCostResult.value) });
         }
 
         /* ─── 第 2 批：DailyMinter — epoch 依赖链，分两批并行 ─── */

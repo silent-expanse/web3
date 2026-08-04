@@ -282,7 +282,7 @@ export function ConnectPanel() {
     prevAddress.current = wagmiAddress;
 
     if (!wagmiConnected || !wagmiAddress) return;
-    if (!ct.isReady || ct.isSimulated || !ct.game || !ct.sesToken) return;
+    if (!ct.isReady || ct.contractUnavailable || !ct.game || !ct.sesToken) return;
 
     let cancelled = false;
     setCheckingCiv(true);
@@ -322,7 +322,7 @@ export function ConnectPanel() {
 
     check();
     return () => { cancelled = true; };
-  }, [wagmiConnected, wagmiAddress, ct.isReady, ct.isSimulated]);
+  }, [wagmiConnected, wagmiAddress, ct.isReady, ct.contractUnavailable]);
 
   /* ── 入场费 ── */
   useEffect(() => {
@@ -354,8 +354,8 @@ export function ConnectPanel() {
 
   /* ── 推导 UI 状态 ── */
   const uiDisconnected = !wagmiConnected;
-  const uiChecking = wagmiConnected && (!ct.isReady || ct.isSimulated || checkingCiv);
-  const uiForm = wagmiConnected && ct.isReady && !ct.isSimulated && !checkingCiv && !creating;
+  const uiChecking = wagmiConnected && (!ct.isReady || ct.contractUnavailable || checkingCiv);
+  const uiForm = wagmiConnected && ct.isReady && !ct.contractUnavailable && !checkingCiv && !creating;
   const uiCreating = creating;
 
   return (
@@ -387,7 +387,7 @@ export function ConnectPanel() {
       {/* ── 加载中 ── */}
       {uiChecking && (
         <StatusText>
-          {!ct.isReady || ct.isSimulated ? t('connect.loading_contract') : t('connect.checking_civ')}
+          {!ct.isReady || ct.contractUnavailable ? t('connect.loading_contract') : t('connect.checking_civ')}
         </StatusText>
       )}
 

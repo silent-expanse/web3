@@ -64,7 +64,7 @@ echo "========================================="
 # ═══════════════════════════════════════════
 #  SilentExpanseStrife (main game contract)
 # ═══════════════════════════════════════════
-DF="0xa5959273f87c7a555193fa2b9e81e0526cd357aa"
+DF="0x58c2400527813f78fc7ed498dd4ec66dc7787e73"
 echo ""
 echo "── SilentExpanseStrife ──"
 
@@ -122,7 +122,7 @@ done
 # ═══════════════════════════════════════════
 #  SilentExpanseStrifeToken (SES Token)
 # ═══════════════════════════════════════════
-TOKEN="0x0c01d8500b8b819eb4459233d9bcc2e7c6a27109"
+TOKEN="0x1491e226292cf61aba5717828540c0f2518301c6"
 echo ""
 echo "── SilentExpanseStrifeToken ──"
 test_view Token "$TOKEN" "balanceOf(address)(uint256)" "$TEST_ADDR"

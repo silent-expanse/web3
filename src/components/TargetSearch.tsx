@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import styled from 'styled-components';
 import { useGameStore } from '../hooks/useGameStore';
 import { useContract } from '../hooks/useContract';
-import { useGameActions, calcAttackEnergyCost, civFromRaw } from '../hooks/useGameActions';
+import { useGameActions, civFromRaw } from '../hooks/useGameActions';
 import { ActionButton } from './ui/ActionButton';
 import { TxConfirm } from './ui/TxConfirm';
 import { THEME } from '../theme';
@@ -92,7 +92,7 @@ export function TargetSearch() {
   const [inRange, setInRange] = useState(false);
 
   const now = Date.now();
-  const attackEnergyCost = playerCiv ? calcAttackEnergyCost(playerCiv.weaponLv) : 0;
+  const attackEnergyCost = useGameStore(s => s.attackEnergyCost); // 链上 getAttackEnergyCost
   const canAttack = target && playerCiv && inRange && playerCiv.energy >= attackEnergyCost && (now - lastAttackTime >= ATTACK_COOLDOWN) && !loading;
   const cooldownRemaining = Math.max(0, Math.ceil((ATTACK_COOLDOWN - (now - lastAttackTime)) / 1000));
 

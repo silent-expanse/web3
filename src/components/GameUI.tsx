@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useGameStore } from '../hooks/useGameStore';
 import { useIsMobile } from '../hooks/useMediaQuery';
-import { calcCollectRate, useGameActions } from '../hooks/useGameActions';
+import { useGameActions } from '../hooks/useGameActions';
 import { ConnectPanel } from './ConnectPanel';
 import { HUD } from './HUD';
 import { ActionPanel } from './ActionPanel';
@@ -288,7 +288,7 @@ function DesktopLayout() {
   }
 
   const shortAddr = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '';
-  const rate = calcCollectRate(playerCiv.energyCollectorLv);
+  const rate = useGameStore(s => s.collectRate); // 链上 getEnergyCollectRate（÷1e6）
   const shieldPct = playerCiv.maxShieldHP > 0
     ? Math.round((playerCiv.shieldHP / playerCiv.maxShieldHP) * 100)
     : 0;
@@ -439,6 +439,7 @@ function MobileLayout() {
   const battleLog = useGameStore(s => s.battleLog);
   const alliance = useGameStore(s => s.currentAlliance);
   const loading = useGameStore(s => s.loading);
+  const collectRate = useGameStore(s => s.collectRate); // 链上 getEnergyCollectRate（÷1e6）
 
   const [activeTab, setActiveTab] = useState<TabId | null>(null);
   const [prevConnected, setPrevConnected] = useState(connected);
@@ -476,7 +477,7 @@ function MobileLayout() {
             </MiniCard>
             <MiniCard $color="#44ff88">
               <MiniLabel>⚡/s</MiniLabel>
-              <MiniValue $color="#44ff88">{fmt(calcCollectRate(playerCiv.energyCollectorLv), 2)}</MiniValue>
+              <MiniValue $color="#44ff88">{fmt(collectRate, 2)}</MiniValue>
             </MiniCard>
             <MiniCard $color="#ff8844">
               <MiniLabel>❤️</MiniLabel>

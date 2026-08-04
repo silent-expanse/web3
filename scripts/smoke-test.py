@@ -11,8 +11,8 @@ RPC = "https://bsc-dataseed1.binance.org"
 
 # ── contract addresses (from constants.ts) ──
 ADDRESSES = {
-    "SilentExpanseStrife":          "0xa5959273f87c7a555193fa2b9e81e0526cd357aa",
-    "SilentExpanseStrifeToken":     "0x0c01d8500b8b819eb4459233d9bcc2e7c6a27109",
+    "SilentExpanseStrife":          "0x58c2400527813f78fc7ed498dd4ec66dc7787e73",
+    "SilentExpanseStrifeToken":     "0x1491e226292cf61aba5717828540c0f2518301c6",
     "SilentExpanseStrifeAlliance":  "0x061b60973cfdd0ce4fbb425cfd25d3f3f8bc9716",
     "DailyMinter":         "0x207c6eefd47f5d943f167504bf2cc1c6fa764803",
     "EnergyMarket":        "0xe21c780c163fd65e8962cfbaea143d825cc7b8e8",

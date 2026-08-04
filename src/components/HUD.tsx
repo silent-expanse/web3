@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import styled, { css } from 'styled-components';
 import { useGameStore, type Civilization } from '../hooks/useGameStore';
 import { useIsMobile } from '../hooks/useMediaQuery';
-import { useGameActions, calcCollectRate, calcAttackPower, calcShieldDefense, calcSpeed, calcRadarRange, calcAttackEnergyCost } from '../hooks/useGameActions';
+import { useGameActions } from '../hooks/useGameActions';
 import { SYSTEMS, type SystemKey } from '../utils/constants';
 import { ResourceBar } from './ui/ResourceBar';
 import { StatCard } from './ui/StatCard';
@@ -123,7 +123,7 @@ export function HUD() {
   const { upgradeSystem, attackTarget, clearError, rebuildCivilization, repairCollector } = useGameActions();
 
   const now = Date.now();
-  const attackEnergyCost = civ ? calcAttackEnergyCost(civ.weaponLv) : 0;
+  const attackEnergyCost = useGameStore(s => s.attackEnergyCost); // 链上 getAttackEnergyCost
   const canAttack = target && civ && civ.energy >= attackEnergyCost && (now - lastAttackTime >= ATTACK_COOLDOWN) && !loading;
   const cooldownRemaining = Math.max(0, Math.ceil((ATTACK_COOLDOWN - (now - lastAttackTime)) / 1000));
   const targetName = target && enemyCivs.get(target)?.name;
@@ -133,13 +133,16 @@ export function HUD() {
   if (!civ) return null;
 
   const shortAddr = addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '';
-  const rate = calcCollectRate(civ.energyCollectorLv);
-  const atk = calcAttackPower(civ.weaponLv);
-  const defVal = calcShieldDefense(civ.shieldLv);
+  const rate = useGameStore(s => s.collectRate); // 链上 getEnergyCollectRate（÷1e6）
+  const atk = useGameStore(s => s.attackPower);  // 链上 getAttackPower
   const sesNum = parseFloat(ses);
   const isDestroyed = useGameStore(s => s.isDestroyed);
   const collectorDur = useGameStore(s => s.collectorDurability);
   const combatBoost = useGameStore(s => s.combatBoost);
+  // 防御/速度/雷达从链上 view 读取（轮询刷新），避免本地重复公式
+  const defVal = useGameStore(s => s.shieldDefense);
+  const speedVal = useGameStore(s => s.speed);
+  const radarVal = useGameStore(s => s.radarRange);
 
   const handleConfirmUpgrade = () => {
     if (confirmAction?.type === 'upgrade' && confirmAction.system) {
@@ -166,11 +169,11 @@ export function HUD() {
         { label: t('hud.defense'), value: defVal, color: SYSTEMS.shield.color },
       ] },
     { key: 'radar' as SystemKey, icon: SYSTEMS.radar.icon, title: SYSTEMS.radar.name, lv: civ.radarLv, color: SYSTEMS.radar.color,
-      bars: [{ label: t('hud.scan_range'), value: civ.scanRange, rate: civ.scanRange + t('general.ls'), color: THEME.accent.blue }] },
+      bars: [{ label: t('hud.scan_range'), value: radarVal || civ.scanRange, rate: (radarVal || civ.scanRange) + t('general.ls'), color: THEME.accent.blue }] },
     { key: 'engine' as SystemKey, icon: SYSTEMS.engine.icon, title: SYSTEMS.engine.name, lv: civ.engineLv, color: SYSTEMS.engine.color,
-      bars: [{ label: t('hud.speed'), value: calcSpeed(civ.engineLv), rate: calcSpeed(civ.engineLv) + t('general.ls_h'), color: SYSTEMS.engine.color }],
+      bars: [{ label: t('hud.speed'), value: speedVal, rate: speedVal + t('general.ls_h'), color: SYSTEMS.engine.color }],
     },
-  ], [civ, rate, atk, defVal, t]);
+  ], [civ, rate, atk, defVal, speedVal, radarVal, t]);
 
   return (
     <Container $mobile={isMobile}>

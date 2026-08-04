@@ -7,74 +7,6 @@ import { GAME } from '../utils/constants';
 import { ENERGY_MARKET_ABI } from '../utils/contract';
 import { t } from '../i18n';
 
-/* ══════════════════════════════════════════════════════════
-   数值公式（与 BSC 主网合约 SilentExpanseStrifeStorage 一致）
-   验证：cast call 0x96ee... SYS_* / BASE_* / _calc*
-   ══════════════════════════════════════════════════════════ */
-
-/** 能量采集速率 (energy/sec): lv≤1 ? 3 : 3 + 10·√(lv-1)
- *  简化版：不含推荐加成 (1000+refs*2)/1000，仅用于本地显示。
- *  合约 _calcCollect() 含完整公式，实际采集以链上为准。
- */
-export function calcCollectRate(lv: number): number {
-  if (lv <= 1) return GAME.BASE_COLLECT;
-  // 与合约 _sqrt() 一致：整数平方根（向下取整），Lv3 → 3 + 10×1 = 13
-  return GAME.BASE_COLLECT + GAME.COLLECT_BONUS * isqrt(lv - 1);
-}
-
-/** 整数平方根（牛顿法），精确复刻合约 _sqrt()：⌊√n⌋ */
-function isqrt(n: number): number {
-  if (n <= 0) return 0;
-  let z = n;
-  if (n > 3) {
-    let x = Math.floor(n / 2) + 1;
-    while (x < z) { z = x; x = Math.floor((Math.floor(n / x) + x) / 2); }
-  } else {
-    z = 1;
-  }
-  return z;
-}
-
-/** 攻击力: 900 + 10·lv²  (ATK_BASE=900, ATK_RATE=10) 与合约 _calcAttack() 一致 */
-export function calcAttackPower(lv: number): number {
-  return GAME.ATK_BASE + GAME.ATK_RATE * lv * lv;
-}
-
-/** 防御力: 540 + 6·lv²  (DEF_BASE=540, DEF_RATE=6) 与合约 _calcShieldDefense() 一致 */
-export function calcShieldDefense(lv: number): number {
-  return GAME.DEF_BASE + GAME.DEF_RATE * lv * lv;
-}
-
-/** 雷达探测范围: 1000 + 150·L + 5·L² */
-export function calcRadarRange(lv: number): number {
-  return GAME.RADAR_BASE + GAME.RADAR_LINEAR * lv + GAME.RADAR_QUAD * lv * lv;
-}
-
-/** 护盾 HP: 3600 + 15·lv²  (SHIELD_HP_BASE=3600, SHIELD_HP_RATE=15) 与合约 _calcShieldHP() 一致 */
-export function calcMaxShieldHP(lv: number): number {
-  return GAME.SHIELD_HP_BASE + GAME.SHIELD_HP_RATE * lv * lv;
-}
-
-/** 引擎速度: 10 + 5·(L-1) */
-export function calcSpeed(lv: number): number {
-  return GAME.ENGINE_SPEED_BASE + GAME.ENGINE_SPEED_PER_LV * (lv - 1);
-}
-
-/** 攻击能量消耗: ATTACK_ENERGY_BASE(50000) + ATTACK_ENERGY_PER_LV(50000)·weaponLv */
-export function calcAttackEnergyCost(weaponLv: number): number {
-  return GAME.ATTACK_ENERGY_BASE + GAME.ATTACK_ENERGY_PER_LV * weaponLv;
-}
-
-type CivKey = 'energyCollectorLv' | 'weaponLv' | 'shieldLv' | 'radarLv' | 'engineLv';
-
-const LEVEL_KEYS: Record<SystemKey, CivKey> = {
-  energyCollector: 'energyCollectorLv',
-  weapon: 'weaponLv',
-  shield: 'shieldLv',
-  radar: 'radarLv',
-  engine: 'engineLv',
-};
-
 /** Maps SystemKey → contract string name for getUpgradeCost */
 const SYS_TO_CONTRACT: Record<SystemKey, string> = {
   energyCollector: 'collector',
@@ -238,7 +170,7 @@ export function useGameActions() {
   const attackTarget = useCallback(async () => {
     const store = useGameStore.getState();
     if (!store.playerCiv || !store.selectedTarget) return;
-    const attackCost = calcAttackEnergyCost(store.playerCiv.weaponLv);
+    const attackCost = useGameStore.getState().attackEnergyCost; // 链上 getAttackEnergyCost
     if (store.playerCiv.energy < attackCost) {
       useGameStore.setState({ error: t('toast.attack_energy', { cost: attackCost }) });
       return;
@@ -273,7 +205,23 @@ export function useGameActions() {
     try {
       requireContract(ct.game, 'SilentExpanseStrife');
       const tx = await ct.game!.collectEnergy();
-      await tx.wait();
+      const receipt = await tx.wait();
+      // 从 EnergyCollected 事件读取本次实际收取的能量（合约 _collectEnergy 结算值）
+      let collected = 0;
+      if (receipt && receipt.logs) {
+        try {
+          const iface = ct.game!.interface;
+          for (const log of receipt.logs) {
+            try {
+              const parsed = iface.parseLog(log);
+              if (parsed && parsed.name === 'EnergyCollected') {
+                collected = Number(parsed.args.amount ?? 0);
+                break;
+              }
+            } catch { /* 非本合约事件，跳过 */ }
+          }
+        } catch { /* 事件解析失败则回退为 0 */ }
+      }
       const addr = await getAddress();
       const raw = await ct.game!.getCivilization(addr);
       const civ = parseCivData(raw);
@@ -284,7 +232,7 @@ export function useGameActions() {
         // 用合约返回的 lastUpdateTime（秒→ms），保持与轮询基准一致
         lastCollectTime: raw.lastUpdateTime ? Number(raw.lastUpdateTime) * 1000 : Date.now(),
       }));
-      useGameStore.getState().addSuccessToast(t('toast.collect_success', { amount: Math.floor(calcCollectRate(raw.energyCollectorLv ?? 1) * 10) }));
+      useGameStore.getState().addSuccessToast(t('toast.collect_success', { amount: collected }));
     } catch (e) {
       useGameStore.getState().addErrorToast(t('toast.collect_failed', { msg: errMsg(e) }));
     } finally {
@@ -445,8 +393,8 @@ export function useGameActions() {
   const repairShield = useCallback(async () => {
     const store = useGameStore.getState();
     if (!store.playerCiv) return;
-    // 优先使用合约读取的 maxShieldHP，兜底用本地计算（与合约一致）
-    const maxHP = store.playerCiv.maxShieldHP || calcMaxShieldHP(store.playerCiv.shieldLv);
+    // maxShieldHP 由轮询从 getMaxShieldHP 填充
+    const maxHP = store.playerCiv.maxShieldHP;
     if (store.playerCiv.shieldHP >= maxHP) return;
     useGameStore.setState({ loading: true, error: null });
 
