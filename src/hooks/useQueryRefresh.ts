@@ -297,23 +297,26 @@ export function useMarketPolling() {
       if (!GAME.ENERGY_MARKET || !ct.provider) return null;
       try {
         const market = new Contract(GAME.ENERGY_MARKET, ENERGY_MARKET_ABI, ct.provider);
-        const rawOrders = await market.getActiveOrders(0, 50);
         const orders: { id: number; price: number; amount: number; seller: string; isMine: boolean }[] = [];
 
-        for (let i = 0; i < rawOrders.length; i++) {
-          const o = rawOrders[i];
-          const sellerAddr = typeof o.seller === 'string' ? o.seller.toLowerCase() : '';
-          if (!sellerAddr) continue;
+        // 遍历 orders(id) 获取活跃挂单（remaining > 0）
+        const count = Number(await market.getOrderCount());
+        const maxScan = Math.min(count, 200);
+        for (let i = 0; i < maxScan; i++) {
           try {
-            const realId = await market.activeOrderIds(i);
+            const o = await market.orders(i);
+            const remaining = Number(o.remaining ?? 0);
+            if (remaining <= 0) continue; // 已成交/取消
+            const sellerAddr = typeof o.seller === 'string' ? o.seller.toLowerCase() : '';
+            if (!sellerAddr) continue;
             orders.push({
-              id: Number(realId),
+              id: i,
               amount: Number(o.energyAmount ?? 0),
               price: Number(o.sesPrice ?? 0) / 1e18,
               seller: sellerAddr.slice(0, 6) + '...' + sellerAddr.slice(-4),
               isMine: sellerAddr === (address || '').toLowerCase(),
             });
-          } catch { /* skip */ }
+          } catch { /* skip invalid */ }
         }
 
         useGameStore.setState({ marketOrders: orders });
