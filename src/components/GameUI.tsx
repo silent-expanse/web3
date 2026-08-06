@@ -511,10 +511,11 @@ function MobileLayout() {
                 <MiniValue $color={THEME.accent.gold}>Lv.{alliance.level}</MiniValue>
               </MiniCard>
             )}
-            <MiniCard style={{ padding: '0 4px' }}>
-              <ConnectButton />
-            </MiniCard>
           </MobileHudRow>
+          {/* 钱包按钮固定在右上角，不随状态卡片滚动，避免遮挡 */}
+          <MobileWalletSlot>
+            <ConnectButton />
+          </MobileWalletSlot>
         </MobileHudBar>
       )}
 
@@ -579,6 +580,9 @@ const MobileHudBar = styled.div`
   left: 0;
   right: 0;
   z-index: 130;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   background: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -588,6 +592,14 @@ const MobileHudBar = styled.div`
   flex-shrink: 0;
 `;
 
+/* 钱包按钮固定槽：不随状态卡片横向滚动，始终可见且不遮挡 */
+const MobileWalletSlot = styled.div`
+  flex-shrink: 0;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+`;
+
 const MobileHudRow = styled.div`
   display: flex;
   align-items: center;
@@ -595,6 +607,8 @@ const MobileHudRow = styled.div`
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  flex: 1;
+  min-width: 0;
   &::-webkit-scrollbar { display: none; }
 `;
 
