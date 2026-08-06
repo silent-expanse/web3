@@ -599,7 +599,7 @@ export function GameUI() {
 // These are adapted from the original GameUI.tsx
 
 const MobileHudBar = styled.div`
-  position: fixed;
+  position: sticky;
   top: 0;
   left: 0;
   right: 0;
@@ -610,6 +610,7 @@ const MobileHudBar = styled.div`
   border-bottom: 1px solid rgba(0, 255, 136, 0.1);
   padding: 6px 10px;
   padding-top: calc(env(safe-area-inset-top, 0px) + 6px);
+  flex-shrink: 0;
 `;
 
 const MobileHudRow = styled.div`
