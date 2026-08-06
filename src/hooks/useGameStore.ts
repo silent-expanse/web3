@@ -126,7 +126,7 @@ interface GameState {
   attackEnergyCost: number;
   speed: number;
   radarRange: number;
-  marketOrders: { id: number; price: number; amount: number; seller: string; isMine: boolean }[];
+  marketOrders: { id: number; price: number; amount: number; remaining: number; seller: string; isMine: boolean }[];
   // 联盟轮询（_ 前缀表来自 useQueryRefresh 的自动写，非手动）
   _allianceMembers: string[];
   _allianceTotemLevel: number;

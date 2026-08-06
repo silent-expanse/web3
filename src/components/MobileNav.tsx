@@ -3,7 +3,7 @@ import { useGameStore } from '../hooks/useGameStore';
 import { useI18n } from '../hooks/useI18n';
 import { THEME } from '../theme';
 
-export type TabId = 'hud' | 'actions' | 'log' | 'alliance';
+export type TabId = 'hud' | 'actions' | 'combat' | 'market' | 'alliance';
 
 interface Props {
   activeTab: TabId | null;
@@ -60,10 +60,10 @@ const Icon = styled.span`
 `;
 
 const TAB_ICONS: Record<TabId, string> = {
-  hud: '📊', actions: '🎮', log: '⚔', alliance: '🏰',
+  hud: '📊', actions: '🎮', combat: '⚔️', market: '📈', alliance: '🏰',
 };
 const TAB_COLORS: Record<TabId, string> = {
-  hud: THEME.accent.green, actions: THEME.accent.blue, log: THEME.accent.red, alliance: THEME.accent.gold,
+  hud: THEME.accent.green, actions: THEME.accent.blue, combat: THEME.accent.red, market: THEME.accent.gold, alliance: THEME.accent.gold,
 };
 
 export function MobileNav({ activeTab, onTabChange }: Props) {
@@ -71,12 +71,13 @@ export function MobileNav({ activeTab, onTabChange }: Props) {
   const battleLog = useGameStore(s => s.battleLog);
   const alliance = useGameStore(s => s.currentAlliance);
 
-  const tabIds: TabId[] = ['hud', 'actions', 'log', 'alliance'];
+  const tabIds: TabId[] = ['hud', 'actions', 'combat', 'market', 'alliance'];
 
   const tabLabels: Record<TabId, string> = {
     hud: t('mobile.tab_overview'),
     actions: t('mobile.tab_actions'),
-    log: t('mobile.tab_battle'),
+    combat: t('mobile.tab_combat'),
+    market: t('mobile.tab_market'),
     alliance: t('mobile.tab_alliance'),
   };
 
@@ -85,7 +86,7 @@ export function MobileNav({ activeTab, onTabChange }: Props) {
       {tabIds.map(id => {
         const isActive = activeTab === id;
         const hasBadge =
-          (id === 'log' && battleLog.length > 0) ||
+          (id === 'combat' && battleLog.length > 0) ||
           (id === 'alliance' && alliance !== null);
 
         return (
@@ -119,4 +120,4 @@ const Badge = styled.span`
 `;
 
 /* Re-export tab IDs for convenience */
-export const TAB_ORDER: TabId[] = ['hud', 'actions', 'log', 'alliance'];
+export const TAB_ORDER: TabId[] = ['hud', 'actions', 'combat', 'market', 'alliance'];

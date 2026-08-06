@@ -14,7 +14,6 @@ import { UpgradeRecommendation } from './UpgradeRecommendation';
 import { Leaderboard } from './Leaderboard';
 import { EnergyMarket } from './EnergyMarket';
 import { MobileNav, type TabId } from './MobileNav';
-import { MobilePanel } from './MobilePanel';
 import { ToastContainer } from './Toast';
 import { useI18n } from '../hooks/useI18n';
 import { THEME } from '../theme';
@@ -211,7 +210,8 @@ const ContentInner = styled.div`
 const TAB_COLORS: Record<TabId, string> = {
   hud: THEME.accent.green,
   actions: THEME.accent.blue,
-  log: THEME.accent.red,
+  combat: THEME.accent.red,
+  market: THEME.accent.gold,
   alliance: THEME.accent.gold,
 };
 
@@ -518,55 +518,30 @@ function MobileLayout() {
         </MobileHudBar>
       )}
 
-      {/* Main scrollable content area */}
+      {/* Main scrollable content area — 按底部 Tab 显示当前面板（不再堆叠） */}
       <MobileContent>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <ActionPanel />
-          <TargetSearch />
-          <BattleLog />
-          <UpgradeRecommendation />
-          <EnergyMarket />
-          <Leaderboard />
-          <AlliancePanel />
-        </div>
+        {activeTab === 'hud' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <HUD />
+            <Leaderboard />
+          </div>
+        )}
+        {activeTab === 'actions' && <ActionPanel />}
+        {activeTab === 'combat' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <TargetSearch />
+            <BattleLog />
+          </div>
+        )}
+        {activeTab === 'market' && <EnergyMarket />}
+        {activeTab === 'alliance' && <AlliancePanel />}
+        {activeTab === null && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <HUD />
+            <Leaderboard />
+          </div>
+        )}
       </MobileContent>
-
-      {/* Mobile Panels (overlays for tab navigation) - keeping compatible */}
-      <MobilePanel
-        open={activeTab === 'hud'}
-        title={t('hud.title')}
-        color={TAB_COLORS.hud}
-        onClose={() => setActiveTab(null)}
-      >
-        <HUD />
-      </MobilePanel>
-
-      <MobilePanel
-        open={activeTab === 'actions'}
-        title={t('page.actions')}
-        color={TAB_COLORS.actions}
-        onClose={() => setActiveTab(null)}
-      >
-        <ActionPanel />
-      </MobilePanel>
-
-      <MobilePanel
-        open={activeTab === 'log'}
-        title={t('battle.title')}
-        color={TAB_COLORS.log}
-        onClose={() => setActiveTab(null)}
-      >
-        <BattleLog />
-      </MobilePanel>
-
-      <MobilePanel
-        open={activeTab === 'alliance'}
-        title={t('alliance.title')}
-        color={TAB_COLORS.alliance}
-        onClose={() => setActiveTab(null)}
-      >
-        <AlliancePanel />
-      </MobilePanel>
 
       <MobileNav activeTab={activeTab} onTabChange={setActiveTab} />
 

@@ -297,7 +297,7 @@ export function useMarketPolling() {
       if (!GAME.ENERGY_MARKET || !ct.provider) return null;
       try {
         const market = new Contract(GAME.ENERGY_MARKET, ENERGY_MARKET_ABI, ct.provider);
-        const orders: { id: number; price: number; amount: number; seller: string; isMine: boolean }[] = [];
+        const orders: { id: number; price: number; amount: number; remaining: number; seller: string; isMine: boolean }[] = [];
 
         // 遍历 orders(id) 获取活跃挂单（remaining > 0）
         const count = Number(await market.getOrderCount());
@@ -312,6 +312,7 @@ export function useMarketPolling() {
             orders.push({
               id: i,
               amount: Number(o.energyAmount ?? 0),
+              remaining,
               price: Number(o.sesPrice ?? 0) / 1e18,
               seller: sellerAddr.slice(0, 6) + '...' + sellerAddr.slice(-4),
               isMine: sellerAddr === (address || '').toLowerCase(),

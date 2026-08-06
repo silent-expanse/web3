@@ -60,10 +60,12 @@ export function EnergyMarket() {
     if (!amt || isNaN(price)) return;
     await createEnergyOrder(amt, price);
   };
-  const handleBuy = async (order: { id: number; price: number; amount: number }) => {
-    const cost = order.price * order.amount;
+  const handleBuy = async (order: { id: number; price: number; amount: number; remaining: number }) => {
+    const buyAmount = order.remaining > 0 ? order.remaining : order.amount;
+    const cost = order.price * buyAmount;
     if (parseFloat(ses) < cost) return;
-    await fillEnergyOrder(order.id, order.price);
+    // 购买挂单剩余能量；fillEnergyOrder 按 remaining 精确结算（传 energyAmount）
+    await fillEnergyOrder(order.id, buyAmount);
   };
   const handleCancel = async (order: { id: number }) => {
     await cancelEnergyOrder(order.id);

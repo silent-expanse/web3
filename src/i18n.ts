@@ -541,7 +541,8 @@ const EN: Dict = {
   /* ════════════════════ Mobile Nav ════════════════════ */
   'mobile.tab_overview': 'Status',
   'mobile.tab_actions': 'Actions',
-  'mobile.tab_battle': 'Log',
+  'mobile.tab_combat': 'Combat',
+  'mobile.tab_market': 'Market',
   'mobile.tab_alliance': 'Alliance',
 
   /* ════════════════════ Page Titles ════════════════════ */
