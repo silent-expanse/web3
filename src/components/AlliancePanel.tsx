@@ -159,6 +159,20 @@ export function AlliancePanel() {
                 <span>{t('alliance.totem')} Lv.{totemLevel}</span>
                 <span>{t('alliance.totem_pool')}: {fmt(totemEnergy)}⚡</span>
               </Row>
+              {/* 图腾加成（合约 _defAllianceBonus: 每盟友 8 防御 × (1+图腾Lv×0.5%)） */}
+              {alliance && alliance.memberCount > 1 && (
+                <Row style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
+                  <span style={{ color: THEME.text.secondary, fontSize: '0.7rem' }}>{t('alliance.totem_bonus_desc')}</span>
+                  <span style={{ color: THEME.accent.green, fontSize: '0.8rem' }}>
+                    {t('alliance.totem_bonus_value', { val: fmt(Math.floor((alliance.memberCount - 1) * 8 * (10000 + totemLevel * 50) / 10000)) })}
+                  </span>
+                  {isLeader && (
+                    <span style={{ color: THEME.accent.gold, fontSize: '0.75rem' }}>
+                      {t('alliance.totem_next_bonus', { val: fmt(Math.floor((alliance.memberCount - 1) * 8 * (10000 + (totemLevel + 1) * 50) / 10000)) })}
+                    </span>
+                  )}
+                </Row>
+              )}
               {isLeader && (
                 <Row>
                   <span>⬆ {t('alliance.upgrade_totem')}</span>

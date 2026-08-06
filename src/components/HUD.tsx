@@ -120,6 +120,14 @@ export function HUD() {
   const defVal = useGameStore(s => s.shieldDefense);
   const speedVal = useGameStore(s => s.speed);
   const radarVal = useGameStore(s => s.radarRange);
+  // 联盟图腾防御加成（合约 _defAllianceBonus: 每盟友 8 防御 × (1+图腾Lv×0.5%)）
+  const currentAlliance = useGameStore(s => s.currentAlliance);
+  const totemLv = useGameStore(s => s._allianceTotemLevel);
+  const allyCount = currentAlliance?.memberCount ?? 0;
+  const allyBonus = allyCount > 1
+    ? Math.floor((allyCount - 1) * 8 * (10000 + totemLv * 50) / 10000)
+    : 0;
+  const defTotal = defVal + allyBonus;
 
   const shortAddr = addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '';
   const sesNum = parseFloat(ses);
@@ -135,17 +143,17 @@ export function HUD() {
       { key: 'weapon' as SystemKey, icon: SYSTEMS.weapon.icon, title: SYSTEMS.weapon.name, lv: c.weaponLv, color: SYSTEMS.weapon.color,
         bars: [{ label: t('hud.attack_power'), value: atk, color: THEME.accent.red }] },
       { key: 'shield' as SystemKey, icon: SYSTEMS.shield.icon, title: SYSTEMS.shield.name, lv: c.shieldLv, color: SYSTEMS.shield.color,
-        bars: [
-          { label: t('hud.shield'), value: c.shieldHP, max: c.maxShieldHP, color: THEME.accent.shield },
-          { label: t('hud.defense'), value: defVal, color: SYSTEMS.shield.color },
-        ] },
+      bars: [
+        { label: t('hud.shield'), value: c.shieldHP, max: c.maxShieldHP, color: THEME.accent.shield },
+        { label: t('hud.defense'), value: defTotal, color: SYSTEMS.shield.color },
+      ] },
       { key: 'radar' as SystemKey, icon: SYSTEMS.radar.icon, title: SYSTEMS.radar.name, lv: c.radarLv, color: SYSTEMS.radar.color,
         bars: [{ label: t('hud.scan_range'), value: radarVal || c.scanRange, rate: (radarVal || c.scanRange) + t('general.ls'), color: THEME.accent.blue }] },
       { key: 'engine' as SystemKey, icon: SYSTEMS.engine.icon, title: SYSTEMS.engine.name, lv: c.engineLv, color: SYSTEMS.engine.color,
         bars: [{ label: t('hud.speed'), value: speedVal, rate: speedVal + t('general.ls_h'), color: SYSTEMS.engine.color }],
       },
     ];
-  }, [civ, rate, atk, defVal, speedVal, radarVal, t]);
+  }, [civ, rate, atk, defTotal, speedVal, radarVal, t]);
 
   if (!civ) return null;
 
