@@ -466,52 +466,10 @@ function MobileLayout() {
     <MobileContainer>
       <ToastContainer />
 
-      {/* Compact HUD bar (adapted from original GameUI mobile code) */}
+      {/* Compact HUD bar — 只留名称 + 钱包；状态展示在「状态」tab 的 HUD 页 */}
       {playerCiv && (
         <MobileHudBar>
-          <MobileHudRow>
-            <MiniName>{playerCiv.name}</MiniName>
-            <MiniCard $color={THEME.accent.gold}>
-              <MiniLabel>SES</MiniLabel>
-              <MiniValue $color={THEME.accent.gold}>{fmtCompact(ses)}</MiniValue>
-            </MiniCard>
-            <MiniCard>
-              <MiniLabel>⚡</MiniLabel>
-              <MiniValue>{fmt(playerCiv.energy)}</MiniValue>
-            </MiniCard>
-            <MiniCard $color="#44ff88">
-              <MiniLabel>⚡/s</MiniLabel>
-              <MiniValue $color="#44ff88">{fmt(collectRate, 2)}</MiniValue>
-            </MiniCard>
-            <MiniCard $color="#ff8844">
-              <MiniLabel>❤️</MiniLabel>
-              <MiniValue $color="#ff8844">{fmt(playerCiv.health)}</MiniValue>
-            </MiniCard>
-            <MiniCard $color={THEME.accent.shield}>
-              <MiniLabel>🛡</MiniLabel>
-              <MiniValue $color={THEME.accent.shield}>
-                {playerCiv.shieldHP > 0
-                  ? Math.round((playerCiv.shieldHP / (playerCiv.maxShieldHP || 1)) * 100) + '%'
-                  : '0%'}
-              </MiniValue>
-            </MiniCard>
-            <MiniCard $color={THEME.accent.blue}>
-              <MiniLabel>📡</MiniLabel>
-              <MiniValue $color={THEME.accent.blue}>{playerCiv.scanRange}</MiniValue>
-            </MiniCard>
-            {battleLog.length > 0 && (
-              <MiniCard $color={THEME.accent.red}>
-                <MiniLabel>⚔</MiniLabel>
-                <MiniValue $color={THEME.accent.red}>{battleLog.length}</MiniValue>
-              </MiniCard>
-            )}
-            {alliance && (
-              <MiniCard $color={THEME.accent.gold}>
-                <MiniLabel>{alliance.name}</MiniLabel>
-                <MiniValue $color={THEME.accent.gold}>Lv.{alliance.level}</MiniValue>
-              </MiniCard>
-            )}
-          </MobileHudRow>
+          <MiniName>{playerCiv.name}</MiniName>
           {/* 钱包按钮固定在右上角，不随状态卡片滚动，避免遮挡 */}
           <MobileWalletSlot>
             <ConnectButton />
@@ -524,6 +482,7 @@ function MobileLayout() {
         {activeTab === 'hud' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <HUD />
+            <UpgradeRecommendation />
             <Leaderboard />
           </div>
         )}
@@ -539,6 +498,7 @@ function MobileLayout() {
         {activeTab === null && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <HUD />
+            <UpgradeRecommendation />
             <Leaderboard />
           </div>
         )}

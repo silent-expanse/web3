@@ -1,14 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import styled, { css } from 'styled-components';
 import { useGameStore, type Civilization } from '../hooks/useGameStore';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { useGameActions } from '../hooks/useGameActions';
 import { SYSTEMS, type SystemKey } from '../utils/constants';
-import { ResourceBar } from './ui/ResourceBar';
 import { StatCard } from './ui/StatCard';
 import { ActionButton } from './ui/ActionButton';
-import { TxConfirm } from './ui/TxConfirm';
-import { LoadingOverlay } from './Spinner';
 import { THEME } from '../theme';
 import { useI18n } from '../hooks/useI18n';
 import { fmt, fmtCompact, fmtCoord } from '../utils/format';
@@ -99,13 +96,6 @@ const StatRate = styled.div`
   font-family: 'Courier New', monospace;
 `;
 
-const LoadOverlay = styled.div`
-  position: absolute; inset: 0; z-index: 1; border-radius: 8px; overflow: hidden;
-`;
-
-/* ─── Constants ─── */
-const ATTACK_COOLDOWN = 3000;
-
 export function HUD() {
   const { t } = useI18n();
   const civ = useGameStore(s => s.playerCiv);
@@ -113,22 +103,12 @@ export function HUD() {
   const ses = useGameStore(s => s.sesBalance);
   const pending = useGameStore(s => s.pendingEnergy);
   const tokens = useGameStore(s => s.attackTokens);
-  const target = useGameStore(s => s.selectedTarget);
   const loading = useGameStore(s => s.loading);
   const error = useGameStore(s => s.error);
-  const enemyCivs = useGameStore(s => s.enemyCivs);
-  const lastAttackTime = useGameStore(s => s.lastAttackTime);
   const isMobile = useIsMobile();
 
-  const { upgradeSystem, attackTarget, clearError, rebuildCivilization, repairCollector } = useGameActions();
-
-  const now = Date.now();
-  const attackEnergyCost = useGameStore(s => s.attackEnergyCost); // 链上 getAttackEnergyCost
-  const canAttack = target && civ && civ.energy >= attackEnergyCost && (now - lastAttackTime >= ATTACK_COOLDOWN) && !loading;
-  const cooldownRemaining = Math.max(0, Math.ceil((ATTACK_COOLDOWN - (now - lastAttackTime)) / 1000));
-  const targetName = target && enemyCivs.get(target)?.name;
-
-  const [confirmAction, setConfirmAction] = useState<{ type: 'upgrade' | 'attack'; system?: SystemKey } | null>(null);
+  // 维修/重建入口（采集器耐久耗尽时的唯一修复入口；重建在摧毁状态）
+  const { clearError, rebuildCivilization, repairCollector } = useGameActions();
 
   // ── 所有 hooks 必须在条件 return 之前（React Hooks 规则，避免 #310）──
   const rate = useGameStore(s => s.collectRate); // 链上 getEnergyCollectRate（÷1e6）
@@ -143,17 +123,6 @@ export function HUD() {
 
   const shortAddr = addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '';
   const sesNum = parseFloat(ses);
-
-  const handleConfirmUpgrade = () => {
-    if (confirmAction?.type === 'upgrade' && confirmAction.system) {
-      upgradeSystem(confirmAction.system);
-    }
-    setConfirmAction(null);
-  };
-  const handleConfirmAttack = () => {
-    attackTarget();
-    setConfirmAction(null);
-  };
 
   const systems = useMemo(() => {
     const c = civ!; // hooks 必须在条件 return 之前（React 规则），civ 为 null 时组件提前返回不渲染此处
@@ -193,21 +162,13 @@ export function HUD() {
         </div>
       )}
 
-      {/* ── Panel 1: Identity + Key Stats ── */}
+      {/* ── Panel 1: Identity + Key Stats（纯展示）── */}
       <Panel>
         <Row style={{ marginBottom: 10 }}>
           <div style={{ flex: 1 }}>
             <Name>{civ.name}</Name>
             <Sub>{shortAddr}</Sub>
           </div>
-          {target && (
-            <ActionButton variant="danger" disabled={!canAttack}
-              onClick={() => setConfirmAction({ type: 'attack' })} icon="⚔️"
-            >
-              {targetName ? `${targetName} ${canAttack ? t('hud.in_range') : t('hud.out_of_range')}` : (canAttack ? t('hud.in_range') : t('hud.out_of_range'))}
-              {cooldownRemaining > 0 ? ` (${cooldownRemaining}s)` : ` (${attackEnergyCost}⚡)`}
-            </ActionButton>
-          )}
         </Row>
         {/* 坐标独占一行，nowrap 避免长文本在网格内被拆成多行 */}
         <Sub style={{ color: THEME.accent.blue, whiteSpace: 'nowrap', marginBottom: 10 }}>
@@ -286,62 +247,20 @@ export function HUD() {
         </Panel>
       )}
 
-      {/* ── Panel 2: 五大系统 ── */}
-      <Panel style={{ position: 'relative' }}>
+      {/* ── Panel 2: 五大系统（状态展示；升级操作在「系统」页）── */}
+      <Panel>
         <SectionTitle>{t('hud.tech_systems')}</SectionTitle>
-        {loading && <LoadOverlay><LoadingOverlay message={t('hud.loading_upgrade')} color={THEME.accent.green} transparent /></LoadOverlay>}
         <Grid>
           {systems.map(s => {
             return (
               <StatCard
                 key={s.key} icon={s.icon} title={s.title} level={s.lv}
                 bars={s.bars} warn={false}
-                actions={
-                  <ActionButton variant="primary" disabled={loading}
-                    onClick={() => setConfirmAction({ type: 'upgrade', system: s.key })} icon="⬆️"
-                  >
-                    {t('upgrade.btn')}
-                  </ActionButton>
-                }
               />
             );
           })}
         </Grid>
       </Panel>
-
-      {/* ── TxConfirm ── */}
-      <TxConfirm
-        open={!!confirmAction}
-        title={confirmAction?.type === 'attack'
-          ? `${t('hud.confirm_attack')}${targetName ? ` ${targetName}` : ''}`
-          : `${confirmAction?.system ? `${SYSTEMS[confirmAction.system].icon} ${t('hud.confirm_upgrade')} ${SYSTEMS[confirmAction.system].name}` : ''}`}
-        icon={confirmAction?.type === 'attack' ? '⚔️' : '⬆️'}
-        onConfirm={confirmAction?.type === 'attack' ? handleConfirmAttack : handleConfirmUpgrade}
-        onCancel={() => setConfirmAction(null)}
-        confirmVariant={confirmAction?.type === 'attack' ? 'danger' : 'primary'}
-        confirmLabel={confirmAction?.type === 'attack' ? t('hud.confirm_attack') : t('hud.confirm_upgrade')}
-        loading={loading}
-      >
-        {confirmAction?.type === 'attack' ? (
-          <>
-            {t('hud.cost')}: {attackEnergyCost} {t('general.energy')}<br />
-            {t('hud.target')}: {targetName || target}<br />
-            {cooldownRemaining > 0 && `${t('hud.cooldown')}: ${cooldownRemaining}s`}
-          </>
-        ) : confirmAction?.system ? (
-          <>
-            {t('upgrade.btn')} {SYSTEMS[confirmAction.system].name} Lv.
-            {civ[confirmAction.system === 'energyCollector' ? 'energyCollectorLv' :
-                 confirmAction.system === 'weapon' ? 'weaponLv' :
-                 confirmAction.system === 'shield' ? 'shieldLv' :
-                 confirmAction.system === 'radar' ? 'radarLv' : 'engineLv']} →{' '}
-            {civ[confirmAction.system === 'energyCollector' ? 'energyCollectorLv' :
-                 confirmAction.system === 'weapon' ? 'weaponLv' :
-                 confirmAction.system === 'shield' ? 'shieldLv' :
-                 confirmAction.system === 'radar' ? 'radarLv' : 'engineLv'] + 1}
-          </>
-        ) : null}
-      </TxConfirm>
     </Container>
   );
 }
