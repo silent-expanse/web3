@@ -15,6 +15,7 @@ import { Leaderboard } from './Leaderboard';
 import { EnergyMarket } from './EnergyMarket';
 import { MobileNav, type TabId } from './MobileNav';
 import { ToastContainer } from './Toast';
+import { SystemIcon } from './ui/SystemIcon';
 import { useI18n } from '../hooks/useI18n';
 import { THEME } from '../theme';
 import { fmt, fmtCompact } from '../utils/format';
@@ -324,17 +325,17 @@ function DesktopLayout() {
         <ConnectButton />
 
         <Pill $color={THEME.accent.gold}>
-          <PillLabel>SES</PillLabel>
+          <PillLabel><SystemIcon icon="/assets/systems/ses.web.png" /></PillLabel>
           <PillValue $color={THEME.accent.gold}>{fmtCompact(ses)}</PillValue>
         </Pill>
 
         <Pill $color={THEME.accent.green}>
-          <PillLabel>⚡</PillLabel>
+          <PillLabel><SystemIcon icon="/assets/systems/energy.web.png" /></PillLabel>
           <PillValue $color={THEME.accent.green}>{fmt(playerCiv.energy)}</PillValue>
         </Pill>
 
         <Pill $color="#44ff88">
-          <PillLabel>⚡/s</PillLabel>
+          <PillLabel><SystemIcon icon="/assets/systems/energy.web.png" />/s</PillLabel>
           <PillValue $color="#44ff88">{rate}</PillValue>
         </Pill>
 
@@ -363,7 +364,7 @@ function DesktopLayout() {
               $active={page === item.id}
               onClick={() => setPage(item.id)}
             >
-              <NavIcon>{item.icon}</NavIcon>
+              <NavIcon><SystemIcon icon={item.icon} /></NavIcon>
               {t(item.label)}
             </NavBtn>
           ))}

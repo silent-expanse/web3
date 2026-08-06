@@ -115,11 +115,11 @@ export const GAME = {
 
 // System display config
 export const SYSTEMS = {
-  energyCollector: { name: '采集', icon: '🔧', color: '#44ff88', label: '能量采集' },
-  weapon: { name: '武器', icon: '⚔️', color: '#ff4444', label: '武器系统' },
-  shield: { name: '护盾', icon: '🛡️', color: '#ffaa00', label: '护盾系统' },
-  radar: { name: '雷达', icon: '📡', color: '#4488ff', label: '雷达系统' },
-  engine: { name: '引擎', icon: '🚀', color: '#ff66cc', label: '引擎系统' },
+  energyCollector: { name: '采集', icon: '/assets/systems/collector.web.png', color: '#44ff88', label: '能量采集' },
+  weapon: { name: '武器', icon: '/assets/systems/weapon.web.png', color: '#ff4444', label: '武器系统' },
+  shield: { name: '护盾', icon: '/assets/systems/shield.web.png', color: '#ffaa00', label: '护盾系统' },
+  radar: { name: '雷达', icon: '/assets/systems/radar.web.png', color: '#4488ff', label: '雷达系统' },
+  engine: { name: '引擎', icon: '/assets/systems/engine.web.png', color: '#ff66cc', label: '引擎系统' },
 } as const;
 
 export type SystemKey = keyof typeof SYSTEMS;

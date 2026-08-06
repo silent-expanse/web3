@@ -2,6 +2,7 @@ import { type ReactNode } from 'react';
 import styled from 'styled-components';
 import { THEME } from '../../theme';
 import { ResourceBar } from './ResourceBar';
+import { SystemIcon } from './SystemIcon';
 
 interface StatCardProps {
   icon: string;
@@ -72,7 +73,7 @@ export function StatCard({ icon, title, level, levelKey = 'Lv', children, bars, 
   return (
     <Card $warn={warn}>
       <Header>
-        <Title>{icon} {title}</Title>
+        <Title><SystemIcon icon={icon} /> {title}</Title>
         {level !== undefined && <Level>{levelKey}.{level}</Level>}
       </Header>
       <Body>

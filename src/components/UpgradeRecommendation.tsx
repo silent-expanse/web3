@@ -5,6 +5,7 @@ import { useGameStore } from '../hooks/useGameStore';
 import { useContract } from '../hooks/useContract';
 import { useGameActions } from '../hooks/useGameActions';
 import { ActionButton } from './ui/ActionButton';
+import { SystemIcon } from './ui/SystemIcon';
 import { TxConfirm } from './ui/TxConfirm';
 import { LoadingOverlay } from './Spinner';
 import { THEME } from '../theme';
@@ -356,7 +357,7 @@ export function UpgradeRecommendation() {
           <Card key={r.key} $color={r.color} $highlight={i === 0} $affordable={affordable}>
             <CardHeader>
               <CardTitle>
-                {r.icon} {r.name}
+                <SystemIcon icon={r.icon} /> {r.name}
                 <LevelBadge $color={r.color}>Lv.{r.lv}</LevelBadge>
               </CardTitle>
               {i === 0 && <HighlightTag $color={r.color}>{t('upgrade.recommend_badge')}</HighlightTag>}
