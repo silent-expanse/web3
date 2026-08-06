@@ -17,15 +17,15 @@ const Nav = styled.nav`
   right: 0;
   height: 56px;
   display: flex;
-  align-items: center;
-  justify-content: space-around;
+  align-items: stretch;
+  justify-content: space-between;
   background: rgba(0, 0, 0, 0.85);
   border-top: 1px solid rgba(0, 255, 136, 0.15);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   pointer-events: auto;
   z-index: 150;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding: 0 0 env(safe-area-inset-bottom, 0px) 0;
 `;
 
 const TabButton = styled.button<{ $active: boolean; $color: string }>`
@@ -34,7 +34,8 @@ const TabButton = styled.button<{ $active: boolean; $color: string }>`
   align-items: center;
   justify-content: center;
   gap: 2px;
-  flex: 1;
+  flex: 1 1 0%;
+  min-width: 0;
   height: 100%;
   background: transparent;
   border: none;
@@ -48,6 +49,9 @@ const TabButton = styled.button<{ $active: boolean; $color: string }>`
   transition: color 0.15s, border-color 0.15s;
   padding: 4px 0;
   min-height: 44px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
   &:active {
     opacity: 0.7;
