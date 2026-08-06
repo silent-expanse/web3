@@ -313,7 +313,8 @@ export function useMarketPolling() {
               id: i,
               amount: Number(o.energyAmount ?? 0),
               remaining,
-              price: Number(o.sesPrice ?? 0) / 1e18,
+              // 单价 = 总价 sesPrice / 总量 energyAmount（合约 _unitPrice 语义）
+              price: Number(o.sesPrice ?? 0) / 1e18 / Math.max(Number(o.energyAmount ?? 1), 1),
               seller: sellerAddr.slice(0, 6) + '...' + sellerAddr.slice(-4),
               isMine: sellerAddr === (address || '').toLowerCase(),
             });
