@@ -6,6 +6,7 @@ import { useGameActions } from '../hooks/useGameActions';
 import { LoadingOverlay } from './Spinner';
 import { ActionButton } from './ui/ActionButton';
 import { SystemIcon } from './ui/SystemIcon';
+import { TxConfirm } from './ui/TxConfirm';
 import { useI18n } from '../hooks/useI18n';
 import { THEME } from '../theme';
 import { fmt, fmtCompact, fmtCoord } from '../utils/format';
@@ -187,10 +188,12 @@ const ErrorBanner = styled.div`
 
 export function ActionPanel() {
   const [showMove, setShowMove] = useState(false);
+  const [jumpConfirm, setJumpConfirm] = useState(false);
   const [tx, setTx] = useState('');
   const [ty, setTy] = useState('');
   const [tz, setTz] = useState('');
   const pending = useGameStore(s => s.pendingEnergy);
+  const isMoving = useGameStore(s => s.playerCiv?.isMoving ?? false);
   const loading = useGameStore(s => s.loading);
   const error = useGameStore(s => s.error);
   const sesBalance = useGameStore(s => s.sesBalance);
@@ -214,6 +217,7 @@ export function ActionPanel() {
   };
 
   const hasShield = playerCiv && playerCiv.shieldHP > 0;
+  const shieldFull = playerCiv ? playerCiv.shieldHP >= (playerCiv.maxShieldHP || 0) && playerCiv.maxShieldHP > 0 : false;
 
   /* ── Pending collectable energy — 直接读链上 getPendingEnergy（轮询刷新），
    *    与 _collectEnergy 结算完全一致（含耐久上限封顶）。 */
@@ -344,14 +348,15 @@ export function ActionPanel() {
             <ActionLabel $color={THEME.accent.blue}>{t('action.move')}</ActionLabel>
           </ActionCard>
         )}
-        <ActionCard $color="#ff66aa" $disabled={loading} onClick={() => !loading && spaceJump()}>
+        <ActionCard $color="#ff66aa" $disabled={loading} onClick={() => !loading && setJumpConfirm(true)}>
           <ActionIcon><SystemIcon icon="/assets/systems/jump.web.png" /></ActionIcon>
           <ActionLabel $color="#ff66aa">{t('action.jump')}</ActionLabel>
         </ActionCard>
-        {/* Cancel move */}
-        <ActionCard $color={THEME.accent.red} $disabled={loading || showMove} onClick={() => !loading && !showMove && cancelMove()}>
+        {/* Cancel move — 仅在移动中可取消 */}
+        <ActionCard $color={THEME.accent.red} $disabled={loading || showMove || !isMoving} onClick={() => !loading && !showMove && isMoving && cancelMove()}>
           <ActionIcon><SystemIcon icon="/assets/systems/cancel.web.png" /></ActionIcon>
-          <ActionLabel $color={THEME.accent.red}>{t('action.cancel_move')}</ActionLabel>
+          <ActionLabel $color={isMoving ? THEME.accent.red : THEME.text.secondary}>{t('action.cancel_move')}</ActionLabel>
+          {isMoving && <ActionBadge $color={THEME.accent.red}>{t('action.moving')}</ActionBadge>}
         </ActionCard>
       </Grid>
 
@@ -360,10 +365,12 @@ export function ActionPanel() {
       {/* === System Maintenance === */}
       <GroupLabel><SystemIcon icon="/assets/systems/collector.web.png" /> {t('action.group_repair')}</GroupLabel>
       <Grid>
-        <ActionCard $color={THEME.accent.blue} $disabled={loading} onClick={() => !loading && repairShield()}>
+        <ActionCard $color={THEME.accent.blue} $disabled={loading || shieldFull} onClick={() => !loading && !shieldFull && repairShield()}>
           <ActionIcon><SystemIcon icon="/assets/systems/shield.web.png" /></ActionIcon>
-          <ActionLabel $color={THEME.accent.blue}>{t('action.repair_shield')}</ActionLabel>
-          {hasShield && <ActionBadge $color={THEME.accent.blue}>HP {playerCiv!.shieldHP}</ActionBadge>}
+          <ActionLabel $color={shieldFull ? THEME.text.secondary : THEME.accent.blue}>{t('action.repair_shield')}</ActionLabel>
+          <ActionBadge $color={shieldFull ? THEME.text.secondary : THEME.accent.blue}>
+            {shieldFull ? t('action.shield_full') : `HP ${playerCiv?.shieldHP ?? 0}/${playerCiv?.maxShieldHP ?? 0}`}
+          </ActionBadge>
         </ActionCard>
         <ActionCard $color={THEME.accent.green} $disabled={loading} onClick={() => !loading && regenShield()}>
           <ActionIcon><SystemIcon icon="/assets/systems/regen.web.png" /></ActionIcon>
@@ -374,6 +381,20 @@ export function ActionPanel() {
           <ActionLabel $color="#ff8844">{t('action.repair_all')}</ActionLabel>
         </ActionCard>
       </Grid>
+
+      {/* 追踪跃迁确认 */}
+      <TxConfirm
+        open={jumpConfirm}
+        title={t('action.jump')}
+        icon="/assets/systems/jump.web.png"
+        onConfirm={() => { spaceJump(); setJumpConfirm(false); }}
+        onCancel={() => setJumpConfirm(false)}
+        confirmVariant="primary"
+        confirmLabel={t('action.jump_confirm')}
+        loading={loading}
+      >
+        {t('action.jump_warn')}
+      </TxConfirm>
     </Panel>
   );
 }

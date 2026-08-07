@@ -16,6 +16,7 @@ export interface Civilization {
   engineLv: number;
   scanRange: number;
   isRuins: boolean;
+  isMoving: boolean;
 }
 
 export interface BattleEvent {
@@ -108,6 +109,8 @@ interface GameState {
   addErrorToast: (message: string) => void;
   removeToast: (id: number) => void;
 
+  moveEta: number;
+
   /* ─── attack beam ─── */
   addAttackBeam: (from: [number, number, number], to: [number, number, number]) => void;
   clearAttackBeams: () => void;
@@ -185,6 +188,7 @@ export const useGameStore = create<GameState>((set) => ({
   lastCollectTime: 0,
   collectRate: 0,
   collectorDurability: { current: 0, max: 0 },
+  moveEta: 0,
   combatBoost: 0,
   pendingCollect: 0,
   shieldDefense: 0,
@@ -216,7 +220,7 @@ export const useGameStore = create<GameState>((set) => ({
     connected: false, address: null, playerCiv: null,
     sesBalance: '0', currentAlliance: null, battleLog: [],
     enemyCivs: new Map(), pendingEnergy: 0, isDestroyed: false, toasts: [], attackBeams: [],
-    lastCollectTime: 0, collectRate: 0, collectorDurability: { current: 0, max: 0 }, combatBoost: 0, pendingCollect: 0, shieldDefense: 0, attackPower: 0, attackEnergyCost: 0, speed: 0, radarRange: 0, marketOrders: [], _allianceMembers: [], _allianceTotemLevel: 0, _allianceTotemEnergy: 0, _allianceTotemUpgradeCost: 0, _allianceIsLeader: false, _allianceLeader: '', _alliancePendingRefund: 0,
+    lastCollectTime: 0, collectRate: 0, collectorDurability: { current: 0, max: 0 }, moveEta: 0, combatBoost: 0, pendingCollect: 0, shieldDefense: 0, attackPower: 0, attackEnergyCost: 0, speed: 0, radarRange: 0, marketOrders: [], _allianceMembers: [], _allianceTotemLevel: 0, _allianceTotemEnergy: 0, _allianceTotemUpgradeCost: 0, _allianceIsLeader: false, _allianceLeader: '', _alliancePendingRefund: 0,
   currentEpoch: 0, epochClaimed: false, lastDistributedEpoch: 0,
     epochStartTime: 0, epochEndTime: 0, dailyEmission: 0,
   }),

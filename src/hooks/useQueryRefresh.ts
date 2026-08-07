@@ -39,7 +39,8 @@ export function useCivPolling() {
 
         const [civResult, balResult, tokResult, pendingResult,
                shResult, rateResult, durResult, boostResult,
-              pendingCollectResult, defResult, speedResult, radarResult, atkResult, atkCostResult] = await Promise.allSettled([
+              pendingCollectResult, defResult, speedResult, radarResult, atkResult, atkCostResult,
+              posResult] = await Promise.allSettled([
           df.getCivilization(address),
           ses.balanceOf(address),
           df.getAttackTokenInfo(address),
@@ -57,6 +58,7 @@ export function useCivPolling() {
           df.getRadarRange(address),
           df.getAttackPower(address),
           df.getAttackEnergyCost(address),
+          df.getCurrentPosition(address),
         ]);
 
         /* ─── 解析结果 ─── */
@@ -80,6 +82,7 @@ export function useCivPolling() {
             engineLv: Number(raw.engineLv ?? 1),
             scanRange: Number(raw.scanRange ?? 1000),
             isRuins: Boolean(raw.isRuins ?? false),
+            isMoving: false,
           };
           useGameStore.setState({
             playerCiv: civ,
@@ -135,6 +138,17 @@ export function useCivPolling() {
         if (durResult.status === 'fulfilled') {
           const d = durResult.value;
           useGameStore.setState({ collectorDurability: { current: Number(d[0]), max: Number(d[1]) } });
+        }
+
+        // 6b. Current position / movement state (getCurrentPosition → pos, isMoving, eta)
+        if (posResult.status === 'fulfilled') {
+          const p = posResult.value;
+          const moving = Boolean(p[1] ?? p.isMoving ?? false);
+          const eta = Number(p[2] ?? p.eta ?? 0);
+          useGameStore.setState(s => ({
+            playerCiv: s.playerCiv ? { ...s.playerCiv, isMoving: moving } : null,
+            moveEta: eta,
+          }));
         }
 
         // 7. Combat boost

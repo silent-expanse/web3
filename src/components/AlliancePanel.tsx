@@ -232,18 +232,24 @@ export function AlliancePanel() {
               <Row style={{ marginTop: 6, gap: 6 }}>
                 <Input placeholder={t('alliance.donate')} value={donateAmt}
                   onChange={e => setDonateAmt(e.target.value)} style={{ flex: 1 }} />
-                <ActionButton variant="primary" onClick={() => { donateToTotem(alliance.id, Number(donateAmt)||0); setDonateAmt(''); }}
-                  disabled={loading || !donateAmt}>
+                <ActionButton variant="primary" onClick={() => { const amt = Number(donateAmt); if (amt > 0) { donateToTotem(alliance.id, amt); setDonateAmt(''); } }}
+                  disabled={loading || !(Number(donateAmt) > 0)}>
                   {t('alliance.donate')}
                 </ActionButton>
               </Row>
               {/* 盟主专属操作 */}
               {isLeader && (
                 <>
-                  <ActionButton variant="ghost" onClick={() => upgradeTotem(alliance.id)} disabled={loading}
+                  <ActionButton variant="ghost" onClick={() => upgradeTotem(alliance.id)} disabled={loading || totemEnergy < totemUpgradeCostVal}
+                    title={totemEnergy < totemUpgradeCostVal ? t('alliance.totem_need_more') : undefined}
                     style={{ marginTop: 6, width: '100%' }}>
                     {t('alliance.upgrade_totem')}
                   </ActionButton>
+                  {totemEnergy < totemUpgradeCostVal && (
+                    <div style={{ color: THEME.accent.red, fontSize: '0.68rem', marginTop: 4, fontFamily: "'Courier New', monospace" }}>
+                      {t('alliance.totem_need_more')}（{fmt(totemEnergy)} / {fmt(totemUpgradeCostVal)}）
+                    </div>
+                  )}
                   <ActionButton variant="danger" onClick={() => alliance && handleDisband(alliance.id)} disabled={loading}
                     style={{ marginTop: 4, width: '100%' }}>
                     {t('alliance.disband')}

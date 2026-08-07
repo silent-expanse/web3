@@ -165,11 +165,15 @@ export function EnergyMarket() {
             <div style={{ display: 'flex', gap: 4 }}>
               {o.isMine ? (
                 <ActionButton variant="danger" onClick={() => handleCancel(o)} disabled={loading}>{t('market.cancel_btn')}</ActionButton>
-              ) : (
-                <ActionButton variant="primary" onClick={() => handleBuy(o)} disabled={loading || parseFloat(ses) < o.price * o.amount}>
-                  {t('market.buy_btn')}
-                </ActionButton>
-              )}
+              ) : (() => {
+                const noSes = parseFloat(ses) < o.price * o.amount;
+                return (
+                  <ActionButton variant="primary" onClick={() => handleBuy(o)} disabled={loading || noSes}
+                    title={noSes ? t('market.buy_no_ses') : undefined}>
+                    {t('market.buy_btn')}
+                  </ActionButton>
+                );
+              })()}
             </div>
           </OrderRow>
         ))}

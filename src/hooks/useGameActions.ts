@@ -813,7 +813,7 @@ export function civFromRaw(raw: any) {
     shieldLv,
     engineLv: Number(raw.engineLv ?? 1),
     scanRange: Number(raw.scanRange ?? 1000),
-    isRuins: Boolean(raw.isRuins ?? false),
+    isRuins: Boolean(raw.isRuins ?? false), isMoving: false,
   };
 }
 

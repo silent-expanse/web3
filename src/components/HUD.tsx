@@ -237,6 +237,9 @@ export function HUD() {
             <ActionButton variant="danger" disabled={loading} onClick={() => !loading && rebuildCivilization()}>
               {t('hud.destroyed_btn')}
             </ActionButton>
+            <div style={{ color: THEME.text.secondary, fontSize: '0.68rem', marginTop: 8, fontFamily: "'Courier New', monospace" }}>
+              {t('hud.rebuild_cost')}
+            </div>
           </div>
         </Panel>
       )}

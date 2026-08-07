@@ -394,7 +394,8 @@ export function UpgradeRecommendation() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 {costLoading && <LoadingCost>⟳</LoadingCost>}
                 <ActionButton variant="primary" disabled={loading || !affordable}
-                  onClick={() => setConfirmSystem(r.key)}>
+                  onClick={() => setConfirmSystem(r.key)}
+                  title={!affordable ? t('upgrade.insufficient') : undefined}>
                   {t('upgrade.btn')}
                 </ActionButton>
               </div>

@@ -58,6 +58,15 @@ const SearchBar = styled.div`
   display: flex; gap: 6px; margin-bottom: 8px;
 `;
 
+const BlockReason = styled.div`
+  margin-top: 4px;
+  color: ${THEME.accent.red};
+  font-size: 0.68rem;
+  font-family: 'Courier New', monospace;
+  text-align: center;
+  opacity: 0.85;
+`;
+
 const OutOfRange = styled.div`
   color: ${THEME.accent.red};
   font-size: 0.72rem;
@@ -94,8 +103,13 @@ export function TargetSearch() {
 
   const now = Date.now();
   const attackEnergyCost = useGameStore(s => s.attackEnergyCost); // 链上 getAttackEnergyCost
-  const canAttack = target && playerCiv && inRange && playerCiv.energy >= attackEnergyCost && (now - lastAttackTime >= ATTACK_COOLDOWN) && !loading;
   const cooldownRemaining = Math.max(0, Math.ceil((ATTACK_COOLDOWN - (now - lastAttackTime)) / 1000));
+  const attackBlockReason = !target ? 'combat.attack_btn_idle'
+    : !inRange ? 'combat.attack_out_range'
+    : cooldownRemaining > 0 ? 'combat.attack_in_cd'
+    : playerCiv && playerCiv.energy < attackEnergyCost ? 'combat.attack_no_energy'
+    : null;
+  const canAttack = !attackBlockReason && !loading;
 
   const targetCiv = target ? enemyCivs.get(target) : undefined;
   const targetName = targetCiv?.name ?? (target ? target.slice(0, 6) + '...' : '');
@@ -183,11 +197,15 @@ export function TargetSearch() {
       <ActionButton variant="danger" disabled={!canAttack}
         onClick={() => setConfirmOpen(true)} icon="/assets/systems/weapon.web.png"
         style={{ width: '100%', marginTop: target ? 8 : 0 }}
+        title={attackBlockReason ? t(attackBlockReason) : undefined}
       >
         {target ? t('combat.attack_btn', { name: targetName }) : t('combat.attack_btn_idle')}
         {target && cooldownRemaining > 0 && t('combat.attack_cooldown', { sec: cooldownRemaining })}
         {target && cooldownRemaining <= 0 && inRange && t('combat.attack_cost', { cost: attackEnergyCost })}
       </ActionButton>
+      {attackBlockReason && target && inRange && (
+        <BlockReason>{t(attackBlockReason)}</BlockReason>
+      )}
 
       <TxConfirm
         open={confirmOpen}
