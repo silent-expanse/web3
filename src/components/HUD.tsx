@@ -248,7 +248,7 @@ export function HUD() {
             <span style={{ color: THEME.accent.gold, fontSize: '0.78rem', fontFamily: "'Courier New', monospace" }}>
               {t('hud.durability_warn', { pct: Math.round(collectorDur.current / collectorDur.max * 100) })}
             </span>
-            <ActionButton variant="ghost" disabled={loading} onClick={() => !loading && repairCollector(collectorDur.max)}>
+            <ActionButton variant="ghost" icon="/assets/systems/collector.web.png" disabled={loading} onClick={() => !loading && repairCollector(collectorDur.max)}>
               {t('hud.durability_repair')}
             </ActionButton>
           </div>

@@ -231,7 +231,7 @@ export function ActionPanel() {
   return (
     <Panel $mobile={isMobile}>
       {loading && <LoadOverlay><LoadingOverlay message={t('general.loading')} color={THEME.accent.green} transparent /></LoadOverlay>}
-      <SectionTitle>{t('action.title')}</SectionTitle>
+      <SectionTitle><SystemIcon icon="/assets/systems/energy.web.png" /> {t('action.title')}</SectionTitle>
 
       {/* Resource Info Chips */}
       {playerCiv && (
@@ -263,7 +263,7 @@ export function ActionPanel() {
       )}
 
       {/* === Resource Production === */}
-      <GroupLabel>{t('action.group_collect')}</GroupLabel>
+      <GroupLabel><SystemIcon icon="/assets/systems/energy.web.png" /> {t('action.group_collect')}</GroupLabel>
       <Grid>
         {/* Collect Energy — with pending estimate */}
         <ActionCard $color={THEME.accent.green} $disabled={loading} onClick={() => !loading && collectEnergy()}>
@@ -274,12 +274,12 @@ export function ActionPanel() {
       </Grid>
 
       {/* === Reward Settlement (passive accruals, claimed via tx) === */}
-      <GroupLabel>{t('action.group_claim')}</GroupLabel>
+      <GroupLabel><SystemIcon icon="/assets/systems/crate.web.png" /> {t('action.group_claim')}</GroupLabel>
       <Grid>
         {/* Combat Energy Claim */}
         <ActionCard $color={pending > 0 ? THEME.accent.gold : THEME.text.secondary} $disabled={loading || pending <= 0}
           onClick={() => !loading && pending > 0 && claimCombatEnergy()}>
-          <ActionIcon>📦</ActionIcon>
+          <ActionIcon><SystemIcon icon="/assets/systems/crate.web.png" /></ActionIcon>
           <ActionLabel $color={pending > 0 ? THEME.accent.gold : THEME.text.secondary}>{t('action.combat_energy')}</ActionLabel>
           {pending > 0 && <ActionBadge $color={THEME.accent.gold}>{fmt(pending)}</ActionBadge>}
           {pending <= 0 && <ActionBadge $color={THEME.text.secondary}>{t('action.combat_energy_empty')}</ActionBadge>}
@@ -289,7 +289,7 @@ export function ActionPanel() {
         {!epochDistributed && (
           <ActionCard $color={THEME.accent.gold} $disabled={loading}
             onClick={() => !loading && distribute()}>
-            <ActionIcon>📤</ActionIcon>
+            <ActionIcon><SystemIcon icon="/assets/systems/distribute.web.png" /></ActionIcon>
             <ActionLabel $color={THEME.accent.gold}>{t('action.distribute')}</ActionLabel>
             <ActionBadge $color={THEME.accent.gold}>{t('action.distributing')}</ActionBadge>
           </ActionCard>
@@ -300,7 +300,7 @@ export function ActionPanel() {
           <ActionCard $color={epochClaimed ? THEME.text.secondary : '#8844ff'}
             $disabled={loading || epochClaimed}
             onClick={() => !loading && !epochClaimed && claimDailySES()}>
-            <ActionIcon>📅</ActionIcon>
+            <ActionIcon><SystemIcon icon="/assets/systems/claim.web.png" /></ActionIcon>
             <ActionLabel $color={epochClaimed ? THEME.text.secondary : '#8844ff'}>
               {epochClaimed ? t('action.claimed_today') : t('action.claim_ses')}
             </ActionLabel>
@@ -314,7 +314,7 @@ export function ActionPanel() {
       <Divider />
 
       {/* === Movement === */}
-      <GroupLabel>{t('action.group_move')}</GroupLabel>
+      <GroupLabel><SystemIcon icon="/assets/systems/engine.web.png" /> {t('action.group_move')}</GroupLabel>
       <Grid>
         {showMove ? (
           <div style={{ gridColumn: '1 / -1' }}>
@@ -345,12 +345,12 @@ export function ActionPanel() {
           </ActionCard>
         )}
         <ActionCard $color="#ff66aa" $disabled={loading} onClick={() => !loading && spaceJump()}>
-          <ActionIcon>🌌</ActionIcon>
+          <ActionIcon><SystemIcon icon="/assets/systems/jump.web.png" /></ActionIcon>
           <ActionLabel $color="#ff66aa">{t('action.jump')}</ActionLabel>
         </ActionCard>
         {/* Cancel move */}
         <ActionCard $color={THEME.accent.red} $disabled={loading || showMove} onClick={() => !loading && !showMove && cancelMove()}>
-          <ActionIcon>⏹️</ActionIcon>
+          <ActionIcon><SystemIcon icon="/assets/systems/cancel.web.png" /></ActionIcon>
           <ActionLabel $color={THEME.accent.red}>{t('action.cancel_move')}</ActionLabel>
         </ActionCard>
       </Grid>
@@ -358,7 +358,7 @@ export function ActionPanel() {
       <Divider />
 
       {/* === System Maintenance === */}
-      <GroupLabel>{t('action.group_repair')}</GroupLabel>
+      <GroupLabel><SystemIcon icon="/assets/systems/collector.web.png" /> {t('action.group_repair')}</GroupLabel>
       <Grid>
         <ActionCard $color={THEME.accent.blue} $disabled={loading} onClick={() => !loading && repairShield()}>
           <ActionIcon><SystemIcon icon="/assets/systems/shield.web.png" /></ActionIcon>
@@ -366,7 +366,7 @@ export function ActionPanel() {
           {hasShield && <ActionBadge $color={THEME.accent.blue}>HP {playerCiv!.shieldHP}</ActionBadge>}
         </ActionCard>
         <ActionCard $color={THEME.accent.green} $disabled={loading} onClick={() => !loading && regenShield()}>
-          <ActionIcon>♻️</ActionIcon>
+          <ActionIcon><SystemIcon icon="/assets/systems/regen.web.png" /></ActionIcon>
           <ActionLabel $color={THEME.accent.green}>{t('action.regen_shield')}</ActionLabel>
         </ActionCard>
         <ActionCard $color="#ff8844" $disabled={loading} onClick={() => !loading && repairAll()}>

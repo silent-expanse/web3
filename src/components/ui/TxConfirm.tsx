@@ -2,6 +2,7 @@ import { type ReactNode } from 'react';
 import styled from 'styled-components';
 import { THEME } from '../../theme';
 import { ActionButton } from './ActionButton';
+import { SystemIcon } from './SystemIcon';
 
 interface TxConfirmProps {
   open: boolean;
@@ -83,7 +84,7 @@ const Gas = styled.div`
  * 用法:
  *   <TxConfirm
  *     open={showConfirm}
- *     title="⚔️ 攻击 Mars"
+ *     title="攻击 Mars"
  *     onConfirm={handleAttack}
  *     onCancel={() => setShowConfirm(false)}
  *     confirmVariant="danger"
@@ -102,7 +103,7 @@ export function TxConfirm({
     <Overlay $open={open} onClick={onCancel}>
       <Modal onClick={(e: React.MouseEvent) => e.stopPropagation()}>
         <Header>
-          <Title>{icon || ''} {title}</Title>
+          <Title>{icon && <SystemIcon icon={icon} />} {title}</Title>
         </Header>
         <Body>{children}</Body>
         {gasEstimate && <Gas>⛽ Gas: ~{gasEstimate}</Gas>}

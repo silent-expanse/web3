@@ -5,6 +5,7 @@ import { useContract } from '../hooks/useContract';
 import { useGameActions } from '../hooks/useGameActions';
 import { LoadingOverlay } from './Spinner';
 import { ActionButton } from './ui/ActionButton';
+import { SystemIcon } from './ui/SystemIcon';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { useI18n } from '../hooks/useI18n';
 import { THEME } from '../theme';
@@ -136,7 +137,7 @@ export function AlliancePanel() {
   return (
     <Panel $mobile={isMobile}>
       {loading && <LoadOverlay><LoadingOverlay message={t('general.loading')} color={THEME.accent.gold} transparent /></LoadOverlay>}
-      <SectionTitle>{t('alliance.title')}</SectionTitle>
+      <SectionTitle><SystemIcon icon="/assets/systems/totem.web.png" /> {t('alliance.title')}</SectionTitle>
       <TabRow>
         <Tab $active={tab === 'mine'} onClick={() => setTab('mine')}>{t('alliance.mine')}</Tab>
         <Tab $active={tab === 'list'} onClick={() => setTab('list')}>{t('alliance.available')}</Tab>
@@ -156,8 +157,8 @@ export function AlliancePanel() {
                 ))}
               </div>
               <Row>
-                <span>{t('alliance.totem')} Lv.{totemLevel}</span>
-                <span>{t('alliance.totem_pool')}: {fmt(totemEnergy)}⚡</span>
+                <span><SystemIcon icon="/assets/systems/totem.web.png" /> {t('alliance.totem')} Lv.{totemLevel}</span>
+                <span>{t('alliance.totem_pool')}: {fmt(totemEnergy)} <SystemIcon icon="/assets/systems/energy.web.png" /></span>
               </Row>
               {/* 图腾加成（合约 _defAllianceBonus: 每盟友 8 防御 × (1+图腾Lv×0.5%)） */}
               {alliance && alliance.memberCount > 1 && (
@@ -175,8 +176,8 @@ export function AlliancePanel() {
               )}
               {isLeader && (
                 <Row>
-                  <span>⬆ {t('alliance.upgrade_totem')}</span>
-                  <span style={{ color: THEME.accent.green }}>{fmt(totemUpgradeCostVal)}⚡</span>
+                  <span><SystemIcon icon="/assets/systems/arrow.web.png" /> {t('alliance.upgrade_totem')}</span>
+                  <span style={{ color: THEME.accent.green }}>{fmt(totemUpgradeCostVal)} <SystemIcon icon="/assets/systems/energy.web.png" /></span>
                 </Row>
               )}
               {isLeader && <Row><span style={{ color: THEME.accent.gold }}>{t('alliance.leader')}</span></Row>}

@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { useGameStore } from '../hooks/useGameStore';
 import { useContract } from '../hooks/useContract';
 import { THEME } from '../theme';
+import { SystemIcon } from './ui/SystemIcon';
 import { useI18n } from '../hooks/useI18n';
 import { fmt } from '../utils/format';
 
@@ -117,7 +118,7 @@ export function Leaderboard() {
   if (!players && isFetching) {
     return (
       <Panel>
-        <SectionTitle>{t('nav.leaderboard')}</SectionTitle>
+        <SectionTitle><SystemIcon icon="/assets/systems/trophy.web.png" /> {t('nav.leaderboard')}</SectionTitle>
         <div style={{ color: THEME.text.secondary, textAlign: 'center', padding: 20, fontSize: '0.78rem' }}>
           {t('leaderboard.loading')}
         </div>
@@ -128,7 +129,7 @@ export function Leaderboard() {
   if (!players || players.length === 0) {
     return (
       <Panel>
-        <SectionTitle>{t('nav.leaderboard')}</SectionTitle>
+        <SectionTitle><SystemIcon icon="/assets/systems/trophy.web.png" /> {t('nav.leaderboard')}</SectionTitle>
         <div style={{ color: THEME.text.secondary, textAlign: 'center', padding: 20, fontSize: '0.78rem' }}>
           {t('leaderboard.empty')}
         </div>
@@ -138,7 +139,7 @@ export function Leaderboard() {
 
   return (
     <Panel>
-      <SectionTitle>{t('nav.leaderboard')}</SectionTitle>
+      <SectionTitle><SystemIcon icon="/assets/systems/trophy.web.png" /> {t('nav.leaderboard')}</SectionTitle>
       <Row style={{ color: THEME.text.secondary, fontSize: '0.68rem', borderBottom: `1px solid ${THEME.border}` }}>
         <Rank>{t('leaderboard.col_rank')}</Rank>
         <Name>{t('leaderboard.col_player')}</Name>

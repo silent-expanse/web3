@@ -4,6 +4,7 @@ import { useGameStore } from '../hooks/useGameStore';
 import { useContract } from '../hooks/useContract';
 import { useGameActions, civFromRaw } from '../hooks/useGameActions';
 import { ActionButton } from './ui/ActionButton';
+import { SystemIcon } from './ui/SystemIcon';
 import { TxConfirm } from './ui/TxConfirm';
 import { THEME } from '../theme';
 import { useIsMobile } from '../hooks/useMediaQuery';
@@ -133,7 +134,7 @@ export function TargetSearch() {
 
   return (
     <Panel>
-      <SectionTitle>{t('combat.title')}</SectionTitle>
+      <SectionTitle><SystemIcon icon="/assets/systems/weapon.web.png" /> {t('combat.title')}</SectionTitle>
 
       <SearchBar>
         <Input ref={searchInputRef} placeholder={t('combat.search_placeholder')} value={searchAddr}
@@ -180,7 +181,7 @@ export function TargetSearch() {
       )}
 
       <ActionButton variant="danger" disabled={!canAttack}
-        onClick={() => setConfirmOpen(true)} icon="⚔️"
+        onClick={() => setConfirmOpen(true)} icon="/assets/systems/weapon.web.png"
         style={{ width: '100%', marginTop: target ? 8 : 0 }}
       >
         {target ? t('combat.attack_btn', { name: targetName }) : t('combat.attack_btn_idle')}
@@ -191,7 +192,7 @@ export function TargetSearch() {
       <TxConfirm
         open={confirmOpen}
         title={t('combat.attack_btn', { name: targetName })}
-        icon="⚔️"
+        icon="/assets/systems/weapon.web.png"
         onConfirm={handleConfirmAttack}
         onCancel={() => setConfirmOpen(false)}
         confirmVariant="danger"

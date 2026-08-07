@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { useGameStore } from '../hooks/useGameStore';
 import { useGameActions } from '../hooks/useGameActions';
 import { ActionButton } from './ui/ActionButton';
+import { SystemIcon } from './ui/SystemIcon';
 import { THEME } from '../theme';
 import { useI18n } from '../hooks/useI18n';
 import { fmt } from '../utils/format';
@@ -73,7 +74,7 @@ export function EnergyMarket() {
 
   return (
     <Panel>
-      <SectionTitle>{t('market.title')}</SectionTitle>
+      <SectionTitle><SystemIcon icon="/assets/systems/ses.web.png" /> {t('market.title')}</SectionTitle>
       <Row>
         <Input placeholder={t('market.sell_placeholder_energy')} value={sellAmount}
           onChange={e => setSellAmount(e.target.value)} style={{ flex: 1 }} />

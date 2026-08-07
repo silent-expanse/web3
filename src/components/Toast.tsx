@@ -116,8 +116,8 @@ function ToastItem({ t }: { t: ToastType }) {
     <Item $type={t.type} onClick={() => removeToast(t.id)} title="点击关闭">
       <MsgRow>
         <span>
-          {t.type === 'success' && '✅ '}
-          {t.type === 'error' && '❌ '}
+          {t.type === 'success' && '✓ '}
+          {t.type === 'error' && '✕ '}
           {t.type === 'info' && 'ℹ️ '}
           {t.message}
         </span>

@@ -156,7 +156,7 @@ export function useGameActions() {
           sesBalance: formatBalance(await ses.balanceOf(addr)),
         });
 
-        useGameStore.getState().addSuccessToast(t('toast.upgrade_success', { icon: SYSTEMS[system].icon, name: SYSTEMS[system].name }));
+        useGameStore.getState().addSuccessToast(t('toast.upgrade_success', { name: SYSTEMS[system].name }));
       } catch (e) {
         useGameStore.getState().addErrorToast(t('toast.upgrade_failed', { msg: errMsg(e) }));
       } finally {
@@ -272,7 +272,7 @@ export function useGameActions() {
       requireContract(ct.dailyMinter, 'DailyMinter');
       const tx = await ct.dailyMinter!.distribute();
       await tx.wait();
-      useGameStore.getState().addSuccessToast('📤 分发成功！可以领取 SES 了');
+      useGameStore.getState().addSuccessToast('分发成功！可以领取 SES 了');
     } catch (e) {
       useGameStore.getState().addErrorToast(t('toast.claim_ses_failed', { msg: errMsg(e) }));
     } finally {

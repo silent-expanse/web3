@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import styled, { css } from 'styled-components';
 import { THEME, hoverBg } from '../../theme';
+import { SystemIcon } from './SystemIcon';
 
 type Variant = 'primary' | 'danger' | 'ghost';
 
@@ -62,7 +63,7 @@ const StyledButton = styled.button<{ $variant: Variant }>`
  * ActionButton — 统一操作按钮 (primary/danger/ghost)
  *
  * 用法:
- *   <ActionButton variant="danger" onClick={attack}>⚔️ 攻击</ActionButton>
+ *   <ActionButton variant="danger" onClick={attack}>攻击</ActionButton>
  *   <ActionButton variant="primary" icon="⬆️">升级</ActionButton>
  *   <ActionButton variant="ghost">取消</ActionButton>
  */
@@ -77,7 +78,7 @@ export function ActionButton({ variant = 'ghost', disabled, loading, icon, child
       {...rest}
     >
       {loading && '⟳ '}
-      {icon}{children}
+      {icon && <SystemIcon icon={icon} />}{children}
     </StyledButton>
   );
 }

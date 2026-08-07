@@ -320,7 +320,7 @@ export function UpgradeRecommendation() {
 
   return (
     <Panel>
-      <SectionTitle>{t('nav.tech')}</SectionTitle>
+      <SectionTitle><SystemIcon icon="/assets/systems/shield.web.png" /> {t('nav.tech')}</SectionTitle>
 
       {/* Loading overlay */}
       {loading && <LoadOverlay><LoadingOverlay message={t('upgrade.btn')} color={THEME.accent.green} transparent /></LoadOverlay>}
@@ -389,7 +389,7 @@ export function UpgradeRecommendation() {
               </CostBarTrack>
               <CostLabel $affordable={affordable}>
                 {fmtCompact(sesNum)} / {fmt(costSES, 2)} SES
-                {costEnergy > 0 && <EnergyCostBadge>⚡{fmt(costEnergy)}</EnergyCostBadge>}
+                {costEnergy > 0 && <EnergyCostBadge><SystemIcon icon="/assets/systems/energy.web.png" />{fmt(costEnergy)}</EnergyCostBadge>}
               </CostLabel>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 {costLoading && <LoadingCost>⟳</LoadingCost>}
@@ -406,8 +406,8 @@ export function UpgradeRecommendation() {
       {/* TxConfirm */}
       <TxConfirm
         open={!!confirmSystem}
-        title={`⬆️ ${t('hud.confirm_upgrade')} ${selectedForUpgrade ? selectedForUpgrade.name : ''}`}
-        icon="⬆️"
+        title={`${t('hud.confirm_upgrade')} ${selectedForUpgrade ? selectedForUpgrade.name : ''}`}
+        icon="/assets/systems/arrow.web.png"
         onConfirm={handleConfirmUpgrade}
         onCancel={() => setConfirmSystem(null)}
         confirmVariant="primary"
@@ -418,7 +418,7 @@ export function UpgradeRecommendation() {
           <>
             {t('upgrade.btn')} {selectedForUpgrade.name} Lv.
             {selectedForUpgrade.lv} → {selectedForUpgrade.lv + 1}<br />
-            {realCosts ? `${t('hud.cost')}: ${fmt(Number(realCosts[selectedForUpgrade.sysName]?.ses ?? 0), 2)} SES${Number(realCosts[selectedForUpgrade.sysName]?.energy ?? 0) > 0 ? ` + ${fmt(Number(realCosts[selectedForUpgrade.sysName].energy))}⚡` : ''}` : ''}
+            {realCosts ? `${t('hud.cost')}: ${fmt(Number(realCosts[selectedForUpgrade.sysName]?.ses ?? 0), 2)} SES${Number(realCosts[selectedForUpgrade.sysName]?.energy ?? 0) > 0 ? ` + ${fmt(Number(realCosts[selectedForUpgrade.sysName].energy))} 能量` : ''}` : ''}
           </>
         )}
       </TxConfirm>

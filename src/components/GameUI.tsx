@@ -263,6 +263,15 @@ const PAGE_TITLES: Record<PageId, string> = {
   market: 'page.market',
   leaderboard: 'page.leaderboard',
 };
+const PAGE_ICONS: Record<PageId, string> = {
+  overview: '/assets/systems/radar.web.png',
+  actions: '/assets/systems/energy.web.png',
+  combat: '/assets/systems/weapon.web.png',
+  tech: '/assets/systems/shield.web.png',
+  alliance: '/assets/systems/totem.web.png',
+  market: '/assets/systems/ses.web.png',
+  leaderboard: '/assets/systems/trophy.web.png',
+};
 
 /* ════════════════════════════════════════════
    Desktop Layout
@@ -309,7 +318,7 @@ function DesktopLayout() {
     })();
     return (
       <>
-        <PageTitle>{t(PAGE_TITLES[page])}</PageTitle>
+        <PageTitle><SystemIcon icon={PAGE_ICONS[page]} /> {t(PAGE_TITLES[page])}</PageTitle>
         <PageDivider />
         {content}
       </>
@@ -340,7 +349,7 @@ function DesktopLayout() {
         </Pill>
 
         <Pill $color={THEME.accent.red}>
-          <PillLabel>❤️</PillLabel>
+          <PillLabel><SystemIcon icon="/assets/systems/heart.web.png" /></PillLabel>
           <PillValue $color={THEME.accent.red}>{fmt(playerCiv.health)}</PillValue>
         </Pill>
 
@@ -350,6 +359,7 @@ function DesktopLayout() {
         </Pill>
 
         <DailyClaimBtn $canClaim={!epochClaimed} onClick={() => !sesClaimDisabled && claimDailySES()} disabled={sesClaimDisabled}>
+          <SystemIcon icon="/assets/systems/ses.web.png" />{' '}
           {epochClaimed ? t('ses.claimed') : t('ses.claim')}
         </DailyClaimBtn>
         <TopBarLink href="https://docs.strifelabs.com" target="_blank">{t('connect.tutorial')}</TopBarLink>

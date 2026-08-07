@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { useGameStore } from '../hooks/useGameStore';
 import { useI18n } from '../hooks/useI18n';
 import { THEME } from '../theme';
+import { SystemIcon } from './ui/SystemIcon';
 
 const Panel = styled.div<{ $mobile: boolean }>`
   background: ${THEME.card};
@@ -47,7 +48,7 @@ export function BattleLog() {
 
   return (
     <Panel $mobile={false}>
-      <SectionTitle>{t('battle.title')}</SectionTitle>
+      <SectionTitle><SystemIcon icon="/assets/systems/weapon.web.png" /> {t('battle.title')}</SectionTitle>
       {grouped.length === 0 ? (
         <LogRow style={{ color: THEME.text.secondary, textAlign: 'center' }}>
           {t('battle.empty')}
