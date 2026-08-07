@@ -45,6 +45,46 @@ const OrderRow = styled.div`
 const Sell = styled.span` color: ${THEME.accent.red}; `;
 const Buy = styled.span` color: ${THEME.accent.green}; `;
 
+const FieldRow = styled.div`
+  display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px;
+`;
+
+const FieldLabel = styled.label`
+  display: flex; align-items: center; gap: 6px;
+  color: ${THEME.text.secondary}; font-size: 0.72rem;
+  font-family: 'Courier New', monospace; font-weight: bold;
+  letter-spacing: 0.5px;
+`;
+
+const FieldHint = styled.span`
+  margin-left: auto; color: ${THEME.alpha(THEME.text.secondary, 0.6)};
+  font-size: 0.68rem; font-weight: normal;
+`;
+
+const PreviewRow = styled.div<{ $valid: boolean }>`
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 10px; margin-bottom: 8px;
+  border: 1px dashed ${({ $valid }) => ($valid ? THEME.alpha(THEME.accent.green, 0.5) : THEME.border)};
+  border-radius: 6px;
+  background: ${THEME.alpha(THEME.bg, 0.4)};
+`;
+
+const PreviewLeft = styled.span`
+  display: flex; align-items: center; gap: 6px;
+  color: ${THEME.text.secondary}; font-size: 0.75rem;
+  font-family: 'Courier New', monospace;
+`;
+
+const PreviewValue = styled.span`
+  color: ${THEME.accent.green}; font-size: 0.9rem; font-weight: bold;
+  font-family: 'Courier New', monospace;
+`;
+
+const WarnHint = styled.div`
+  color: ${THEME.accent.red}; font-size: 0.7rem;
+  font-family: 'Courier New', monospace; margin: -4px 0 8px;
+`;
+
 export function EnergyMarket() {
   const { t } = useI18n();
   const ses = useGameStore(s => s.sesBalance);
@@ -55,12 +95,19 @@ export function EnergyMarket() {
 
   const [sellAmount, setSellAmount] = useState('5000');
   const [sellPrice, setSellPrice] = useState('0.010');
+  const playerEnergy = useGameStore(s => s.playerCiv?.energy ?? 0);
 
   const handleSell = async () => {
     const amt = Number(sellAmount), price = parseFloat(sellPrice);
     if (!amt || isNaN(price)) return;
     await createEnergyOrder(amt, price);
   };
+
+  // 实时预览：卖出能量 × 单价 = 预计获得 SES
+  const amtNum = Number(sellAmount);
+  const priceNum = parseFloat(sellPrice);
+  const previewSES = !isNaN(amtNum) && !isNaN(priceNum) && amtNum > 0 && priceNum > 0 ? amtNum * priceNum : null;
+  const canSell = previewSES !== null && amtNum <= playerEnergy;
   const handleBuy = async (order: { id: number; price: number; amount: number; remaining: number }) => {
     const buyAmount = order.remaining > 0 ? order.remaining : order.amount;
     const cost = order.price * buyAmount;
@@ -75,15 +122,32 @@ export function EnergyMarket() {
   return (
     <Panel>
       <SectionTitle><SystemIcon icon="/assets/systems/ses.web.png" /> {t('market.title')}</SectionTitle>
-      <Row>
+
+      {/* ── 卖出挂单：能量 → SES ── */}
+      <FieldRow>
+        <FieldLabel><SystemIcon icon="/assets/systems/energy.web.png" /> {t('market.sell_label_energy')}
+          <FieldHint>{t('market.your_energy')}: {fmt(playerEnergy)}</FieldHint>
+        </FieldLabel>
         <Input placeholder={t('market.sell_placeholder_energy')} value={sellAmount}
-          onChange={e => setSellAmount(e.target.value)} style={{ flex: 1 }} />
+          onChange={e => setSellAmount(e.target.value)} />
+      </FieldRow>
+      <FieldRow>
+        <FieldLabel><SystemIcon icon="/assets/systems/ses.web.png" /> {t('market.sell_label_price')}
+          <FieldHint>{t('market.sell_unit_price')}</FieldHint>
+        </FieldLabel>
         <Input placeholder={t('market.sell_placeholder_price')} value={sellPrice}
-          onChange={e => setSellPrice(e.target.value)} style={{ flex: 1 }} />
-        <ActionButton variant="primary" onClick={handleSell} disabled={loading} style={{ flexShrink: 0 }}>
-          {t('market.sell_btn')}
-        </ActionButton>
-      </Row>
+          onChange={e => setSellPrice(e.target.value)} />
+      </FieldRow>
+      <PreviewRow $valid={canSell}>
+        <PreviewLeft><SystemIcon icon="/assets/systems/ses.web.png" /> {t('market.preview_receive')}</PreviewLeft>
+        <PreviewValue>{previewSES !== null ? fmt(previewSES) : '—'}</PreviewValue>
+      </PreviewRow>
+      {previewSES !== null && !canSell && (
+        <WarnHint>{t('market.insufficient_energy')}</WarnHint>
+      )}
+      <ActionButton variant="primary" onClick={handleSell} disabled={loading || !canSell} style={{ width: '100%' }}>
+        {t('market.sell_btn')}
+      </ActionButton>
 
       <div style={{ marginTop: 10, maxHeight: 280, overflowY: 'auto' }}>
         {orders.length === 0 ? (
