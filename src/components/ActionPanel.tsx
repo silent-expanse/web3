@@ -5,6 +5,7 @@ import { useIsMobile } from '../hooks/useMediaQuery';
 import { useGameActions } from '../hooks/useGameActions';
 import { LoadingOverlay } from './Spinner';
 import { ActionButton } from './ui/ActionButton';
+import { SystemIcon } from './ui/SystemIcon';
 import { useI18n } from '../hooks/useI18n';
 import { THEME } from '../theme';
 import { fmt, fmtCompact, fmtCoord } from '../utils/format';
@@ -266,7 +267,7 @@ export function ActionPanel() {
       <Grid>
         {/* Collect Energy — with pending estimate */}
         <ActionCard $color={THEME.accent.green} $disabled={loading} onClick={() => !loading && collectEnergy()}>
-          <ActionIcon>⚡</ActionIcon>
+          <ActionIcon><SystemIcon icon="/assets/systems/energy.web.png" /></ActionIcon>
           <ActionLabel $color={THEME.accent.green}>{t('action.collect')}</ActionLabel>
           {pendingCollect > 0 && <ActionBadge $color={THEME.accent.green}>~{fmt(pendingCollect)}</ActionBadge>}
         </ActionCard>
@@ -339,7 +340,7 @@ export function ActionPanel() {
           </div>
         ) : (
           <ActionCard $color={THEME.accent.blue} $disabled={loading} onClick={() => !loading && setShowMove(true)}>
-            <ActionIcon>🚀</ActionIcon>
+            <ActionIcon><SystemIcon icon="/assets/systems/engine.web.png" /></ActionIcon>
             <ActionLabel $color={THEME.accent.blue}>{t('action.move')}</ActionLabel>
           </ActionCard>
         )}
@@ -360,7 +361,7 @@ export function ActionPanel() {
       <GroupLabel>{t('action.group_repair')}</GroupLabel>
       <Grid>
         <ActionCard $color={THEME.accent.blue} $disabled={loading} onClick={() => !loading && repairShield()}>
-          <ActionIcon>🛡️</ActionIcon>
+          <ActionIcon><SystemIcon icon="/assets/systems/shield.web.png" /></ActionIcon>
           <ActionLabel $color={THEME.accent.blue}>{t('action.repair_shield')}</ActionLabel>
           {hasShield && <ActionBadge $color={THEME.accent.blue}>HP {playerCiv!.shieldHP}</ActionBadge>}
         </ActionCard>
@@ -369,7 +370,7 @@ export function ActionPanel() {
           <ActionLabel $color={THEME.accent.green}>{t('action.regen_shield')}</ActionLabel>
         </ActionCard>
         <ActionCard $color="#ff8844" $disabled={loading} onClick={() => !loading && repairAll()}>
-          <ActionIcon>🔧</ActionIcon>
+          <ActionIcon><SystemIcon icon="/assets/systems/collector.web.png" /></ActionIcon>
           <ActionLabel $color="#ff8844">{t('action.repair_all')}</ActionLabel>
         </ActionCard>
       </Grid>

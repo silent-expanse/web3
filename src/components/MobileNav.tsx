@@ -2,6 +2,7 @@ import styled from 'styled-components';
 import { useGameStore } from '../hooks/useGameStore';
 import { useI18n } from '../hooks/useI18n';
 import { THEME } from '../theme';
+import { SystemIcon } from './ui/SystemIcon';
 
 export type TabId = 'hud' | 'actions' | 'combat' | 'market' | 'alliance';
 
@@ -64,7 +65,7 @@ const Icon = styled.span`
 `;
 
 const TAB_ICONS: Record<TabId, string> = {
-  hud: '📊', actions: '🎮', combat: '⚔️', market: '📈', alliance: '🏰',
+  hud: '/assets/systems/radar.web.png', actions: '/assets/systems/energy.web.png', combat: '/assets/systems/weapon.web.png', market: '/assets/systems/ses.web.png', alliance: '/assets/systems/totem.web.png',
 };
 const TAB_COLORS: Record<TabId, string> = {
   hud: THEME.accent.green, actions: THEME.accent.blue, combat: THEME.accent.red, market: THEME.accent.gold, alliance: THEME.accent.gold,
@@ -101,7 +102,7 @@ export function MobileNav({ activeTab, onTabChange }: Props) {
             onClick={() => onTabChange(isActive ? null : id)}
             aria-label={tabLabels[id]}
           >
-            <Icon>{TAB_ICONS[id]}</Icon>
+            <Icon><SystemIcon icon={TAB_ICONS[id]} /></Icon>
             {tabLabels[id]}
             {hasBadge && !isActive && <Badge />}
           </TabButton>

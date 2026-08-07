@@ -30,13 +30,13 @@ interface NavItemDef {
 }
 
 const NAV_ITEMS: NavItemDef[] = [
-  { id: 'overview', label: 'nav.overview', icon: '📊' },
-  { id: 'actions', label: 'nav.actions', icon: '🎮' },
-  { id: 'combat', label: 'nav.combat', icon: '⚔️' },
-  { id: 'tech', label: 'nav.tech', icon: '🛡' },
-  { id: 'alliance', label: 'nav.alliance', icon: '🏰' },
-  { id: 'market', label: 'nav.market', icon: '📊' },
-  { id: 'leaderboard', label: 'nav.leaderboard', icon: '🏆' },
+  { id: 'overview', label: 'nav.overview', icon: '/assets/systems/radar.web.png' },
+  { id: 'actions', label: 'nav.actions', icon: '/assets/systems/energy.web.png' },
+  { id: 'combat', label: 'nav.combat', icon: '/assets/systems/weapon.web.png' },
+  { id: 'tech', label: 'nav.tech', icon: '/assets/systems/shield.web.png' },
+  { id: 'alliance', label: 'nav.alliance', icon: '/assets/systems/totem.web.png' },
+  { id: 'market', label: 'nav.market', icon: '/assets/systems/ses.web.png' },
+  { id: 'leaderboard', label: 'nav.leaderboard', icon: '/assets/systems/engine.web.png' },
 ];
 
 /* ─── Layout containers ─── */
@@ -345,7 +345,7 @@ function DesktopLayout() {
         </Pill>
 
         <Pill $color={THEME.accent.shield}>
-          <PillLabel>🛡</PillLabel>
+          <PillLabel><SystemIcon icon="/assets/systems/shield.web.png" /></PillLabel>
           <PillValue $color={THEME.accent.shield}>{shieldPct}%</PillValue>
         </Pill>
 
