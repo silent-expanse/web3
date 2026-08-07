@@ -1,6 +1,7 @@
 import styled, { keyframes } from 'styled-components';
 import { useState } from 'react';
 import { useGameStore, type Toast as ToastType } from '../hooks/useGameStore';
+import { useI18n } from '../hooks/useI18n';
 import { THEME } from '../theme';
 
 const slideIn = keyframes`
@@ -85,21 +86,22 @@ const MsgRow = styled.div`
   word-break: break-all;
 `;
 
-function ToastItem({ t }: { t: ToastType }) {
+function ToastItem({ t: toastMsg }: { t: ToastType }) {
   const removeToast = useGameStore(s => s.removeToast);
   const [copied, setCopied] = useState(false);
 
+  const { t } = useI18n();
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await navigator.clipboard.writeText(t.message);
+      await navigator.clipboard.writeText(toastMsg.message);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
       // clipboard 不可用 (非 HTTPS / 权限) 时回退到 select
       try {
         const ta = document.createElement('textarea');
-        ta.value = t.message;
+        ta.value = toastMsg.message;
         document.body.appendChild(ta);
         ta.select();
         document.execCommand('copy');
@@ -113,16 +115,16 @@ function ToastItem({ t }: { t: ToastType }) {
   };
 
   return (
-    <Item $type={t.type} onClick={() => removeToast(t.id)} title="点击关闭">
+    <Item $type={toastMsg.type} onClick={() => removeToast(toastMsg.id)} title="点击关闭">
       <MsgRow>
         <span>
-          {t.type === 'success' && '✓ '}
-          {t.type === 'error' && '✕ '}
-          {t.type === 'info' && 'ℹ️ '}
-          {t.message}
+          {toastMsg.type === 'success' && '✓ '}
+          {toastMsg.type === 'error' && '✕ '}
+          {toastMsg.type === 'info' && 'ℹ '}
+          {toastMsg.message}
         </span>
-        <CopyBtn onClick={handleCopy} title="复制错误信息">
-          {copied ? '✓ 已复制' : '📋 复制'}
+        <CopyBtn onClick={handleCopy} title={t('nav.copy_addr')}>
+          {copied ? t('toast.copied') : t('nav.copy_addr')}
         </CopyBtn>
       </MsgRow>
     </Item>

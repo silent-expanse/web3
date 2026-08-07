@@ -171,6 +171,10 @@ export function useGameActions() {
     const store = useGameStore.getState();
     if (!store.playerCiv || !store.selectedTarget) return;
     const attackCost = useGameStore.getState().attackEnergyCost; // 链上 getAttackEnergyCost
+    if (store.attackTokens.current <= 0) {
+      useGameStore.setState({ error: t('combat.attack_no_token') });
+      return;
+    }
     if (store.playerCiv.energy < attackCost) {
       useGameStore.setState({ error: t('toast.attack_energy', { cost: attackCost }) });
       return;

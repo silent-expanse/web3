@@ -17,6 +17,7 @@ const ZH: Dict = {
   'nav.leaderboard': '纪元评分榜',
   'nav.wallet': '钱包',
   'nav.copy_addr': '复制地址',
+  'toast.copied': '已复制',
   'nav.disconnect': '断开连接',
 
   /* ════════════════════ Lore / 叙事 ════════════════════ */
@@ -145,6 +146,7 @@ const ZH: Dict = {
   'combat.attack_no_energy': '能量不足，无法攻击',
   'combat.attack_out_range': '目标超出攻击范围',
   'combat.attack_in_cd': '跃迁冷却中，请等待',
+  'combat.attack_no_token': '追踪次数不足，请等待恢复',
   'combat.attack_cooldown': '（跃迁冷却 {sec}s）',
   'combat.attack_cost': '（{cost}⚡）',
   'combat.confirm_attack': '确认跃迁攻击',
@@ -356,6 +358,7 @@ const EN: Dict = {
   'nav.leaderboard': 'Epoch Board',
   'nav.wallet': 'Wallet',
   'nav.copy_addr': 'Copy Address',
+  'toast.copied': 'Copied',
   'nav.disconnect': 'Disconnect',
 
   /* ════════════════════ Lore ════════════════════ */
@@ -484,6 +487,7 @@ const EN: Dict = {
   'combat.attack_no_energy': 'Not enough energy to attack',
   'combat.attack_out_range': 'Target out of range',
   'combat.attack_in_cd': 'Jump cooldown, wait a moment',
+  'combat.attack_no_token': 'No traces left, wait to regenerate',
   'combat.attack_cooldown': '(jump cd {sec}s)',
   'combat.attack_cost': '({cost}⚡)',
   'combat.confirm_attack': 'Confirm Trace Attack',

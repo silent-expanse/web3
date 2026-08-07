@@ -89,6 +89,7 @@ export function TargetSearch() {
   const enemyCivs = useGameStore(s => s.enemyCivs);
   const target = useGameStore(s => s.selectedTarget);
   const lastAttackTime = useGameStore(s => s.lastAttackTime);
+  const attackTokens = useGameStore(s => s.attackTokens);
   const loading = useGameStore(s => s.loading);
   const ct = useContract();
   const addEnemyCiv = useGameStore(s => s.addEnemyCiv);
@@ -108,6 +109,7 @@ export function TargetSearch() {
     : !inRange ? 'combat.attack_out_range'
     : cooldownRemaining > 0 ? 'combat.attack_in_cd'
     : playerCiv && playerCiv.energy < attackEnergyCost ? 'combat.attack_no_energy'
+    : attackTokens.current <= 0 ? 'combat.attack_no_token'
     : null;
   const canAttack = !attackBlockReason && !loading;
 

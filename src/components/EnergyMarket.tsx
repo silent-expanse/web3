@@ -166,7 +166,8 @@ export function EnergyMarket() {
               {o.isMine ? (
                 <ActionButton variant="danger" onClick={() => handleCancel(o)} disabled={loading}>{t('market.cancel_btn')}</ActionButton>
               ) : (() => {
-                const noSes = parseFloat(ses) < o.price * o.amount;
+                const buyQty = o.remaining > 0 ? o.remaining : o.amount;
+                const noSes = parseFloat(ses) < o.price * buyQty;
                 return (
                   <ActionButton variant="primary" onClick={() => handleBuy(o)} disabled={loading || noSes}
                     title={noSes ? t('market.buy_no_ses') : undefined}>

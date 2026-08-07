@@ -414,7 +414,7 @@ export function ConnectPanel() {
       {uiCreating && (
         <>
           <StatusText>{t('general.creating')}</StatusText>
-          <ActionButton $mobile={isMobile} onClick={() => setCreating(false)}
+          <ActionButton $mobile={isMobile} onClick={() => setCreating(false)} disabled={loading}
             style={{ marginTop: 16, fontSize: isMobile ? '0.85rem' : '0.95rem', animation: 'none' }}>
             ← {t('general.back')}
           </ActionButton>
