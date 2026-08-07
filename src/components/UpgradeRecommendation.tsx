@@ -366,19 +366,19 @@ export function UpgradeRecommendation() {
             <StatRow>
               <StatBox>
                 <StatBoxLabel>{t('upgrade.current')}</StatBoxLabel>
-                <StatBoxValue $color={THEME.text.primary}>{r.value}</StatBoxValue>
+                <StatBoxValue $color={THEME.text.primary}>{fmt(r.value)}</StatBoxValue>
               </StatBox>
               <ArrowDivider>→</ArrowDivider>
               <StatBox>
                 <StatBoxLabel>{t('upgrade.after')}</StatBoxLabel>
-                <StatBoxValue $color={r.color} $next>{r.nextValue}</StatBoxValue>
+                <StatBoxValue $color={r.color} $next>{fmt(r.nextValue)}</StatBoxValue>
               </StatBox>
               <StatBox>
                 <StatBoxLabel>{t('upgrade.gain')}</StatBoxLabel>
                 <StatBoxValue $color={r.color} $next>
                   {r.key === 'energyCollector' && r.gain === 0
-                    ? (r.subGain ?? `+${r.gain}`)
-                    : `+${r.gain}`}
+                    ? (r.subGain ?? `+${fmt(r.gain)}`)
+                    : `+${fmt(r.gain)}`}
                 </StatBoxValue>
               </StatBox>
             </StatRow>
