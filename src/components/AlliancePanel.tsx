@@ -69,6 +69,30 @@ const LoadOverlay = styled.div`
   position: absolute; inset: 0; z-index: 1; border-radius: 8px; overflow: hidden;
 `;
 
+const RoleTag = styled.span<{ $leader?: boolean }>`
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  ${({ $leader }) => $leader
+    ? `color: ${THEME.accent.gold}; border: 1px solid ${THEME.alpha(THEME.accent.gold, 0.5)}; background: ${THEME.alpha(THEME.accent.gold, 0.1)};`
+    : `color: ${THEME.text.secondary}; border: 1px solid ${THEME.border};`}
+`;
+
+const MiniBtn = styled.button<{ $danger?: boolean }>`
+  padding: 2px 8px;
+  font-size: 0.65rem;
+  font-family: 'Courier New', monospace;
+  border-radius: 4px;
+  cursor: pointer;
+  background: ${({ $danger }) => ($danger ? THEME.alpha(THEME.accent.red, 0.12) : 'transparent')};
+  border: 1px solid ${({ $danger }) => ($danger ? THEME.alpha(THEME.accent.red, 0.5) : THEME.border)};
+  color: ${({ $danger }) => ($danger ? THEME.accent.red : THEME.text.secondary)};
+  &:hover:not(:disabled) { opacity: 0.8; }
+  &:disabled { opacity: 0.35; cursor: not-allowed; }
+`;
+
 const AllianceListContainer = styled.div`
   max-height: 200px; overflow-y: auto; border: 1px solid ${THEME.alpha(THEME.border, 0.4)}; border-radius: 6px; padding: 4px;
 `;
@@ -87,7 +111,9 @@ export function AlliancePanel() {
   const totemEnergy = useGameStore(s => s._allianceTotemEnergy);
   const totemUpgradeCostVal = useGameStore(s => s._allianceTotemUpgradeCost);
   const isLeader = useGameStore(s => s._allianceIsLeader);
-  const { createAlliance, joinAlliance, leaveAlliance, disbandAlliance, claimRefund, donateToTotem, upgradeTotem } = useGameActions();
+  const allianceLeader = useGameStore(s => s._allianceLeader);
+  const pendingRefund = useGameStore(s => s._alliancePendingRefund);
+  const { createAlliance, joinAlliance, leaveAlliance, kickMember, transferLeadership, disbandAlliance, claimRefund, donateToTotem, upgradeTotem } = useGameActions();
 
   const [tab, setTab] = useState<'mine' | 'list'>('mine');
   const [allianceName, setAllianceName] = useState('');
@@ -152,9 +178,31 @@ export function AlliancePanel() {
                 <AllianceMeta>Lv.{alliance.level} · {alliance.memberCount}{t('alliance.people')}</AllianceMeta>
               </AllianceCard>
               <div style={{ marginBottom: 6 }}>
-                {members.map((m, i) => (
-                  <Row key={i}>{m === address ? <><span style={{color:THEME.accent.green}}>{m.slice(0,6)}...{m.slice(-4)}</span> {t('alliance.you')}</> : `${m.slice(0,6)}...${m.slice(-4)}`}</Row>
-                ))}
+                {members.map((m, i) => {
+                  const isSelf = m === address;
+                  const isThisLeader = m.toLowerCase() === allianceLeader.toLowerCase();
+                  return (
+                    <Row key={i}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
+                        {isThisLeader && <RoleTag $leader>{t('alliance.leader')}</RoleTag>}
+                        <span style={{ color: isSelf ? THEME.accent.green : THEME.text.secondary, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {m.slice(0, 6)}...{m.slice(-4)}
+                        </span>
+                        {isSelf && <span style={{ color: THEME.accent.green }}>{t('alliance.you')}</span>}
+                      </span>
+                      {isLeader && !isSelf && !isThisLeader && (
+                        <span style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                          <MiniBtn onClick={() => { if (window.confirm(t('alliance.transfer_confirm'))) transferLeadership(alliance.id, m); }} disabled={loading}>
+                            {t('alliance.transfer')}
+                          </MiniBtn>
+                          <MiniBtn $danger onClick={() => kickMember(alliance.id, m)} disabled={loading}>
+                            {t('alliance.kick')}
+                          </MiniBtn>
+                        </span>
+                      )}
+                    </Row>
+                  );
+                })}
               </div>
               <Row>
                 <span><SystemIcon icon="/assets/systems/totem.web.png" /> {t('alliance.totem')} Lv.{totemLevel}</span>
@@ -189,23 +237,32 @@ export function AlliancePanel() {
                   {t('alliance.donate')}
                 </ActionButton>
               </Row>
+              {/* 盟主专属操作 */}
               {isLeader && (
-                <ActionButton variant="ghost" onClick={() => upgradeTotem(alliance.id)} disabled={loading}
-                  style={{ marginTop: 6, width: '100%' }}>
-                  {t('alliance.upgrade_totem')}
-                </ActionButton>
+                <>
+                  <ActionButton variant="ghost" onClick={() => upgradeTotem(alliance.id)} disabled={loading}
+                    style={{ marginTop: 6, width: '100%' }}>
+                    {t('alliance.upgrade_totem')}
+                  </ActionButton>
+                  <ActionButton variant="danger" onClick={() => alliance && handleDisband(alliance.id)} disabled={loading}
+                    style={{ marginTop: 4, width: '100%' }}>
+                    {t('alliance.disband')}
+                  </ActionButton>
+                </>
               )}
-              <ActionButton variant="ghost" onClick={() => claimRefund()} disabled={loading} style={{ marginTop: 4, width: '100%' }}>
-                {t('alliance.refund')}
-              </ActionButton>
-              <Row style={{ marginTop: 8, gap: 6 }}>
-                <ActionButton variant="ghost" onClick={() => alliance && handleLeave(alliance.id)} disabled={loading} style={{ flex: 1 }}>
+              {/* 成员专属操作：退出（人数>1 时允许） */}
+              {!isLeader && alliance.memberCount > 1 && (
+                <ActionButton variant="ghost" onClick={() => alliance && handleLeave(alliance.id)} disabled={loading}
+                  style={{ marginTop: 6, width: '100%' }}>
                   {t('alliance.leave')}
                 </ActionButton>
-                <ActionButton variant="danger" onClick={() => alliance && handleDisband(alliance.id)} disabled={loading} style={{ flex: 1 }}>
-                  {t('alliance.disband')}
+              )}
+              {/* 退款：有退款才显示 */}
+              {pendingRefund > 0 && (
+                <ActionButton variant="ghost" onClick={() => claimRefund()} disabled={loading} style={{ marginTop: 4, width: '100%' }}>
+                  {t('alliance.refund')} ({fmt(pendingRefund)} SES)
                 </ActionButton>
-              </Row>
+              )}
             </>
           ) : (
             <div style={{ textAlign: 'center', padding: 12, color: THEME.text.secondary }}>

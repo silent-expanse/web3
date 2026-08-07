@@ -253,11 +253,12 @@ export function useAlliancePolling() {
           return { inAlliance: false };
         }
 
-        const [raw, members, cost, isLeader] = await Promise.all([
+        const [raw, members, cost, isLeader, pendingRefund] = await Promise.all([
           ct.alliance.alliances(allianceId),
           ct.alliance.getAllianceMembers(allianceId),
           ct.alliance.totemUpgradeCost(allianceId),
           ct.alliance.isLeader(allianceId, address),
+          ct.alliance.pendingRefunds(address),
         ]);
 
         useGameStore.setState({
@@ -272,6 +273,8 @@ export function useAlliancePolling() {
           _allianceTotemEnergy: Number(raw.totemEnergy ?? raw[7] ?? 0),
           _allianceTotemUpgradeCost: Number(cost),
           _allianceIsLeader: isLeader,
+          _allianceLeader: String(raw.leader ?? raw[1] ?? ''),
+          _alliancePendingRefund: Number(pendingRefund),
         });
 
         return { inAlliance: true };

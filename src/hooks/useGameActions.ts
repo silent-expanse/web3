@@ -541,7 +541,15 @@ export function useGameActions() {
       requireContract(ct.alliance, 'Alliance');
       const tx = await ct.alliance!.leaveAlliance(allianceId);
       await tx.wait();
-      useGameStore.setState({ currentAlliance: null });
+      useGameStore.setState({
+        currentAlliance: null,
+        _allianceMembers: [],
+        _allianceTotemLevel: 0,
+        _allianceTotemEnergy: 0,
+        _allianceTotemUpgradeCost: 0,
+        _allianceIsLeader: false,
+        _allianceLeader: '',
+      });
       useGameStore.getState().addSuccessToast(t('toast.alliance_left'));
     } catch (e) {
       useGameStore.getState().addErrorToast(t('toast.alliance_leave_failed', { msg: errMsg(e) }));
@@ -565,6 +573,21 @@ export function useGameActions() {
     }
   }, [ct]);
 
+  /* ─── 13a. 转移盟主（仅盟主） ─── */
+  const transferLeadership = useCallback(async (allianceId: string, newLeader: string) => {
+    useGameStore.setState({ loading: true, error: null });
+    try {
+      requireContract(ct.alliance, 'Alliance');
+      const tx = await ct.alliance!.transferLeadership(allianceId, newLeader);
+      await tx.wait();
+      useGameStore.getState().addSuccessToast(t('toast.leadership_transferred'));
+    } catch (e) {
+      useGameStore.getState().addErrorToast(t('toast.leadership_transfer_failed', { msg: errMsg(e) }));
+    } finally {
+      useGameStore.setState({ loading: false });
+    }
+  }, [ct]);
+
   /* ─── 14. 解散联盟（仅盟主） ─── */
   const disbandAlliance = useCallback(async (allianceId: string) => {
     useGameStore.setState({ loading: true, error: null });
@@ -572,7 +595,15 @@ export function useGameActions() {
       requireContract(ct.alliance, 'Alliance');
       const tx = await ct.alliance!.disbandAlliance(allianceId);
       await tx.wait();
-      useGameStore.setState({ currentAlliance: null });
+      useGameStore.setState({
+        currentAlliance: null,
+        _allianceMembers: [],
+        _allianceTotemLevel: 0,
+        _allianceTotemEnergy: 0,
+        _allianceTotemUpgradeCost: 0,
+        _allianceIsLeader: false,
+        _allianceLeader: '',
+      });
       useGameStore.getState().addSuccessToast(t('toast.alliance_disbanded'));
     } catch (e) {
       useGameStore.getState().addErrorToast(t('toast.alliance_disband_failed', { msg: errMsg(e) }));
@@ -726,6 +757,7 @@ export function useGameActions() {
     joinAlliance,
     leaveAlliance,
     kickMember,
+    transferLeadership,
     disbandAlliance,
     donateToTotem,
     upgradeTotem,
