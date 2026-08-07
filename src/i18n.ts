@@ -234,7 +234,8 @@ const ZH: Dict = {
   /* ════════════════════ 移动端导航 ════════════════════ */
   'mobile.tab_overview': '状态',
   'mobile.tab_actions': '操作',
-  'mobile.tab_battle': '战报',
+  'mobile.tab_combat': '作战',
+  'mobile.tab_market': '市场',
   'mobile.tab_alliance': '联盟',
 
   /* ════════════════════ 页面标题 ════════════════════ */
