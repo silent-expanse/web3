@@ -9,6 +9,7 @@ import { useContract } from '../hooks/useContract';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { useI18n } from '../hooks/useI18n';
 import { THEME } from '../theme';
+import { SpaceBackground } from './SpaceBackground';
 
 const float = keyframes`
   0%, 100% { transform: translateY(0px); }
@@ -27,7 +28,7 @@ const Overlay = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(ellipse at center, #0a0a1a 0%, #000 70%);
+  background: transparent;
   pointer-events: auto;
   z-index: 200;
   padding: 24px 16px;
@@ -360,6 +361,7 @@ export function ConnectPanel() {
 
   return (
     <Overlay>
+      <SpaceBackground variant="hero" clip="hero" dense />
       <LoreSection>
         <LoreEngineTitle>◈ {t('lore.splash_title')} ◈</LoreEngineTitle>
         <LoreLine>{t('lore.splash_line1')}</LoreLine>

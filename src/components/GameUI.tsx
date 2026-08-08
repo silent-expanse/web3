@@ -18,6 +18,7 @@ import { ToastContainer } from './Toast';
 import { SystemIcon } from './ui/SystemIcon';
 import { useI18n } from '../hooks/useI18n';
 import { THEME } from '../theme';
+import { SpaceBackground } from './SpaceBackground';
 import { fmt, fmtCompact } from '../utils/format';
 
 /* ─── Types ─── */
@@ -46,6 +47,8 @@ const DashboardContainer = styled.div`
   height: 100dvh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  isolation: isolate;
   background: ${THEME.bg};
   overflow: hidden;
 `;
@@ -223,6 +226,8 @@ const MobileContainer = styled.div`
   height: 100dvh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  isolation: isolate;
   background: ${THEME.bg};
   overflow: hidden;
 `;
@@ -327,6 +332,7 @@ function DesktopLayout() {
 
   return (
     <DashboardContainer>
+      <SpaceBackground variant="hero" clip="game" dense videoOpacity={0.5} />
       <TopBar>
         <CivName>{playerCiv.name}</CivName>
         <CivAddr>{shortAddr}</CivAddr>
@@ -475,6 +481,7 @@ function MobileLayout() {
 
   return (
     <MobileContainer>
+      <SpaceBackground variant="hero" clip="game" dense videoOpacity={0.4} />
       <ToastContainer />
 
       {/* Compact HUD bar — 只留名称 + 钱包；状态展示在「状态」tab 的 HUD 页 */}
