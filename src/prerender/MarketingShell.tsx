@@ -65,7 +65,7 @@ export function MarketingShell() {
 
       <section className="seo-section" id="economy">
         <h2>经济：SES 42069 亿 · 10 年线性释放</h2>
-        <p>每日释放 11.5 亿 SES，经 DailyMinter 按 epoch 分发，玩家须在 epoch 结束前创建文明方可领取，逾期销毁。入场费首年 0.01→0.05 ETH，累计至 feeRecipient。</p>
+        <p>每日释放 11.5 亿 SES，经 DailyMinter 按 epoch 分发，玩家须在 epoch 结束前创建文明方可领取，逾期销毁。入场费首年 0.01→0.05 BNB（BNB Chain 燃料远低于 ETH），累计至 feeRecipient。</p>
         <table className="seo-table"><thead><tr><th>合约</th><th>地址（BSC）</th></tr></thead><tbody>
           <tr><td>Game</td><td>0xa5959273f87c7a555193fa2b9e81e0526cd357aa</td></tr>
           <tr><td>SES Token</td><td>0x0c01d8500b8b819eb4459233d9bcc2e7c6a27109</td></tr>
@@ -83,7 +83,7 @@ export function MarketingShell() {
 
       <section className="seo-section" id="faq">
         <h2>FAQ</h2>
-        <p><strong>Q: 需要多少入场费？</strong> 首日 0.01 ETH，365 天内线性涨至 0.05 ETH，均进入合约 feeRecipient。</p>
+        <p><strong>Q: 需要多少入场费？</strong> 首日 0.01 BNB，365 天内线性涨至 0.05 BNB（BNB 成本远低于 ETH），均进入合约 feeRecipient。</p>
         <p><strong>Q: 被击杀会怎样？</strong> 能量被掠、随机系统掉一级，全体 1 级则文明摧毁，需消耗能量与 SES 重建。</p>
         <p><strong>Q: 怎么获得 SES？</strong> 每日通过 DailyMinter 领取当期 epoch，或在能量市场/DEX 购买。</p>
         <p><strong>Q: 是否开源？</strong> 9 合约已在 BscScan 验证，仓库 MIT 开源，含 177 Tests。</p>
