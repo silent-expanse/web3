@@ -108,6 +108,7 @@ export function MarketingShell() {
           <a href="https://pancakeswap.finance/" target="_blank" rel="noopener" style={{ display: 'inline-block', padding: '6px 10px', border: '1px solid #1E2A45', borderRadius: '20px', background: 'rgba(19,26,43,0.6)', fontSize: '0.82rem' }}>PancakeSwap</a>
           <a href="https://docs.strifelabs.com/" target="_blank" rel="noopener" style={{ display: 'inline-block', padding: '6px 10px', border: '1px solid #1E2A45', borderRadius: '20px', background: 'rgba(19,26,43,0.6)', fontSize: '0.82rem' }}>Strife Docs</a>
           <a href="https://github.com/silent-expanse/web3" target="_blank" rel="noopener" style={{ display: 'inline-block', padding: '6px 10px', border: '1px solid #1E2A45', borderRadius: '20px', background: 'rgba(19,26,43,0.6)', fontSize: '0.82rem' }}>GitHub 开源</a>
+          <a href="https://www.youtube.com/" target="_blank" rel="noopener" style={{ display: 'inline-block', padding: '6px 10px', border: '1px solid #1E2A45', borderRadius: '20px', background: 'rgba(19,26,43,0.6)', fontSize: '0.82rem' }}>YouTube</a>
           <a href="mailto:strifelabs@proton.me?subject=友情链接交换申请-来自strifelabs.com" style={{ display: 'inline-block', padding: '6px 10px', border: '1px dashed rgba(0,212,170,0.4)', borderRadius: '20px', background: 'rgba(0,212,170,0.08)', fontSize: '0.82rem', color: '#00D4AA' }}>＋ 虚位以待 · 申请交换</a>
         </div>
       </section>
