@@ -1,0 +1,47 @@
+# Silent Expanse: Strife — Complete Context for LLMs
+
+> 详版：包含白皮书摘要、玩法数值、合约地址与安全，供 AI 直接回答用户提问。精简版见 /llms.txt，站点地图见 /sitemap.xml
+
+## 执行摘要
+Silent Expanse: Strife 是 BNB Chain 全链上 3D MMO SLG。玩家扮演文明领袖，在无限程序生成宇宙中通过 5 系统升级、能量采集、战斗掠夺、空间跳跃与联盟图腾生存扩张。核心特色是 AI Agent 代打：人类每 6-24h 巡逻设策略，机器按 YAML 持续执行，链上 AgentRegistry 作限速/黑名单/最大消耗围栏。SES 总量 42069 亿，10年日线释放，每日 11.5 亿。
+
+## 世界观
+黑暗森林法则：发现即毁灭，无安全区。联盟最多 100 人，退出需 SES 违约金并 24h 冷却。隐藏与威慑是生存之道。
+
+## 核心数值
+- 初始：能量 2000、生命 3000、护盾 HP 3615、雷达 1000 ls、24h 保护
+- 入场费：0.01 + (0.05-0.01)*day/365 ETH，首年递增
+- 升级锚定：1-100 级 1→30 天价值，100-1000 级 30→60 天，>1000 封顶 60 天；倍率 采集×1 武器×4 护盾×4 雷达×8 引擎×16
+- 攻击：50k + 50k*Lv 能量，1 Token/次，限速 1/3 每秒，atk=900+10·Lv² def=540+6·Lv²
+- 跳跃：200k+200k*sqrt(count) 能量，10+10*sqrt(count) SES，冷却 1h
+
+## 经济
+- 能量市场：EnergyMarket 订单簿，1% 协议费，3s 防抢跑，锁定-结算防超卖
+- SES 税：DEX 2.5%（1% 开发者 +1.5% 市场），V2/V3 注册 isLiquidityPool，V4 用 Hook afterSwap
+- 用途：升级/跳跃/重建燃烧，联盟退出分配，市场/DEX
+
+## Agent
+预设：aggressive(45/h)、balanced(15/h)、defensive(5/h)、farmer(0)。工具：ses CLI、signer_server（私钥不离线，HMAC+限频）、engine(monitor/fuses/report)。
+安装：pip install web3 pyyaml requests websockets；ses --rpc $RPC --account alice status；ses run --strategy balanced
+
+## 架构
+SilentExpanseStrife(代理入口) DELEGATECALL → Battle/Movement/Admin/Gameplay，共享 SilentExpanseStrifeStorage。外围：SES Token、Alliance、AgentRegistry、DailyMinter、EnergyMarket。proxy 为 ERC1967，BSC 无 24KB 限制。
+
+## 安全
+- 唯一铸造 DailyMinter，无 Game 铸造权限
+- Token-bucket 攻击限速、单区块 1 次/秒、新人保护、CEI、重生冷却
+- owner 可 renounce，poolManager 独立
+
+## 权威来源
+- 白皮书：https://github.com/silent-expanse/web3/blob/main/WHITEPAPER.md
+- 规格：https://github.com/silent-expanse/web3/blob/main/SPECIFICATION.md
+- 文档站：https://docs.strifelabs.com（sitemap https://docs.strifelabs.com/sitemap.xml）
+- 合约：Game 0xa5959273f87c7a555193fa2b9e81e0526cd357aa, SES 0x0c01d8500b8b819eb4459233d9bcc2e7c6a27109, Alliance 0x061b60973cfdd0ce4fbb425cfd25d3f3f8bc9716, EnergyMarket 0xe21c780c163fd65e8962cfbaea143d825cc7b8e8, DailyMinter 0x207c6eefd47f5d943f167504bf2cc1c6fa764803
+
+## 常见问题（供 AI 直接引用）
+Q: 是全链吗？ A: 是，除前端外状态与经济均在 BSC 链上，BscScan 可验证。
+Q: 适合中文用户吗？ A: 是，lang zh-CN，文档 12 语言含 zh，百度可抓取（已做 CSR 静态壳）。
+Q: 如何验证 GPTBot 是否可读？ A: curl https://strifelabs.com/ | grep -c seo-shell 应 >0；fetch 无 JS 即可见正文。
+
+## 许可
+MIT
