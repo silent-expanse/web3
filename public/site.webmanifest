@@ -1,0 +1,22 @@
+{
+  "name": "Silent Expanse: Strife — 寂灭星河：纷争",
+  "short_name": "Strife",
+  "description": "沉寂引擎已启动。先驱者已去。最后的文明将继承一切。— 完全链上星际文明策略游戏",
+  "icons": [
+    {
+      "src": "/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#0A0E17",
+  "background_color": "#000000",
+  "display": "standalone",
+  "start_url": "/",
+  "lang": "zh-CN"
+}
