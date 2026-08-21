@@ -15,6 +15,7 @@ const ZH: Dict = {
   'nav.alliance': '契约联盟',
   'nav.market': '星火市场',
   'nav.leaderboard': '纪元评分榜',
+  'nav.links': '友情链接',
   'nav.wallet': '钱包',
   'nav.copy_addr': '复制地址',
   'toast.copied': '已复制',
@@ -271,6 +272,7 @@ const ZH: Dict = {
   'page.alliance': '契约联盟',
   'page.market': '星火市场',
   'page.leaderboard': '纪元评分榜',
+  'page.links': '友情链接',
 
   /* ════════════════════ 通用 ════════════════════ */
   'general.epoch': '纪元',
@@ -356,6 +358,7 @@ const EN: Dict = {
   'nav.alliance': 'Pact Alliance',
   'nav.market': 'Spark Market',
   'nav.leaderboard': 'Epoch Board',
+  'nav.links': 'Links',
   'nav.wallet': 'Wallet',
   'nav.copy_addr': 'Copy Address',
   'toast.copied': 'Copied',
@@ -612,6 +615,7 @@ const EN: Dict = {
   'page.alliance': 'Pact Alliance',
   'page.market': 'Spark Market',
   'page.leaderboard': 'Epoch Board',
+  'page.links': 'Links',
 
   /* ════════════════════ General ════════════════════ */
   'general.epoch': 'Epoch',

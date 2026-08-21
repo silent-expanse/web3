@@ -4,7 +4,7 @@ import { useI18n } from '../hooks/useI18n';
 import { THEME } from '../theme';
 import { SystemIcon } from './ui/SystemIcon';
 
-export type TabId = 'hud' | 'actions' | 'combat' | 'market' | 'alliance';
+export type TabId = 'hud' | 'actions' | 'combat' | 'market' | 'alliance' | 'links';
 
 interface Props {
   activeTab: TabId | null;
@@ -65,10 +65,10 @@ const Icon = styled.span`
 `;
 
 const TAB_ICONS: Record<TabId, string> = {
-  hud: '/assets/systems/radar.web.png', actions: '/assets/systems/energy.web.png', combat: '/assets/systems/weapon.web.png', market: '/assets/systems/ses.web.png', alliance: '/assets/systems/totem.web.png',
+  hud: '/assets/systems/radar.web.png', actions: '/assets/systems/energy.web.png', combat: '/assets/systems/weapon.web.png', market: '/assets/systems/ses.web.png', alliance: '/assets/systems/totem.web.png', links: '/assets/systems/arrow.web.png',
 };
 const TAB_COLORS: Record<TabId, string> = {
-  hud: THEME.accent.green, actions: THEME.accent.blue, combat: THEME.accent.red, market: THEME.accent.gold, alliance: THEME.accent.gold,
+  hud: THEME.accent.green, actions: THEME.accent.blue, combat: THEME.accent.red, market: THEME.accent.gold, alliance: THEME.accent.gold, links: THEME.accent.green,
 };
 
 export function MobileNav({ activeTab, onTabChange }: Props) {
@@ -76,7 +76,7 @@ export function MobileNav({ activeTab, onTabChange }: Props) {
   const battleLog = useGameStore(s => s.battleLog);
   const alliance = useGameStore(s => s.currentAlliance);
 
-  const tabIds: TabId[] = ['hud', 'actions', 'combat', 'market', 'alliance'];
+  const tabIds: TabId[] = ['hud', 'actions', 'combat', 'market', 'alliance', 'links'];
 
   const tabLabels: Record<TabId, string> = {
     hud: t('mobile.tab_overview'),
@@ -84,6 +84,7 @@ export function MobileNav({ activeTab, onTabChange }: Props) {
     combat: t('mobile.tab_combat'),
     market: t('mobile.tab_market'),
     alliance: t('mobile.tab_alliance'),
+    links: t('nav.links'),
   };
 
   return (
@@ -125,4 +126,4 @@ const Badge = styled.span`
 `;
 
 /* Re-export tab IDs for convenience */
-export const TAB_ORDER: TabId[] = ['hud', 'actions', 'combat', 'market', 'alliance'];
+export const TAB_ORDER: TabId[] = ['hud', 'actions', 'combat', 'market', 'alliance', 'links'];

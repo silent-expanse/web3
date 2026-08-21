@@ -13,6 +13,7 @@ import { TargetSearch } from './TargetSearch';
 import { UpgradeRecommendation } from './UpgradeRecommendation';
 import { Leaderboard } from './Leaderboard';
 import { EnergyMarket } from './EnergyMarket';
+import { LinksPanel } from './LinksPanel';
 import { MobileNav, type TabId } from './MobileNav';
 import { ToastContainer } from './Toast';
 import { SystemIcon } from './ui/SystemIcon';
@@ -22,7 +23,7 @@ import { SpaceBackground } from './SpaceBackground';
 import { fmt, fmtCompact } from '../utils/format';
 
 /* ─── Types ─── */
-type PageId = 'overview' | 'actions' | 'combat' | 'tech' | 'alliance' | 'market' | 'leaderboard';
+type PageId = 'overview' | 'actions' | 'combat' | 'tech' | 'alliance' | 'market' | 'leaderboard' | 'links';
 
 interface NavItemDef {
   id: PageId;
@@ -38,6 +39,7 @@ const NAV_ITEMS: NavItemDef[] = [
   { id: 'alliance', label: 'nav.alliance', icon: '/assets/systems/totem.web.png' },
   { id: 'market', label: 'nav.market', icon: '/assets/systems/ses.web.png' },
   { id: 'leaderboard', label: 'nav.leaderboard', icon: '/assets/systems/engine.web.png' },
+  { id: 'links', label: 'nav.links', icon: '/assets/systems/arrow.web.png' },
 ];
 
 /* ─── Layout containers ─── */
@@ -217,6 +219,7 @@ const TAB_COLORS: Record<TabId, string> = {
   combat: THEME.accent.red,
   market: THEME.accent.gold,
   alliance: THEME.accent.gold,
+  links: THEME.accent.green,
 };
 
 /* ─── Mobile wrapper ─── */
@@ -267,6 +270,7 @@ const PAGE_TITLES: Record<PageId, string> = {
   alliance: 'page.alliance',
   market: 'page.market',
   leaderboard: 'page.leaderboard',
+  links: 'page.links',
 };
 const PAGE_ICONS: Record<PageId, string> = {
   overview: '/assets/systems/radar.web.png',
@@ -276,6 +280,7 @@ const PAGE_ICONS: Record<PageId, string> = {
   alliance: '/assets/systems/totem.web.png',
   market: '/assets/systems/ses.web.png',
   leaderboard: '/assets/systems/trophy.web.png',
+  links: '/assets/systems/arrow.web.png',
 };
 
 /* ════════════════════════════════════════════
@@ -319,6 +324,7 @@ function DesktopLayout() {
         case 'alliance': return <AlliancePanel />;
         case 'market': return <EnergyMarket />;
         case 'leaderboard': return <Leaderboard />;
+        case 'links': return <LinksPanel />;
       }
     })();
     return (
@@ -513,6 +519,7 @@ function MobileLayout() {
         )}
         {activeTab === 'market' && <EnergyMarket />}
         {activeTab === 'alliance' && <AlliancePanel />}
+        {activeTab === 'links' && <LinksPanel />}
         {activeTab === null && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <HUD />
