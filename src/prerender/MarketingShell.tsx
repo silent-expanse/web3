@@ -67,10 +67,10 @@ export function MarketingShell() {
         <h2>经济：SES 42069 亿 · 10 年线性释放</h2>
         <p>每日释放 11.5 亿 SES，经 DailyMinter 按 epoch 分发，玩家须在 epoch 结束前创建文明方可领取，逾期销毁。入场费首年 0.01→0.05 BNB（BNB Chain 燃料远低于 ETH），累计至 feeRecipient。</p>
         <table className="seo-table"><thead><tr><th>合约</th><th>地址（BSC）</th></tr></thead><tbody>
-          <tr><td>Game</td><td>0xa5959273f87c7a555193fa2b9e81e0526cd357aa</td></tr>
-          <tr><td>SES Token</td><td>0x0c01d8500b8b819eb4459233d9bcc2e7c6a27109</td></tr>
-          <tr><td>DailyMinter</td><td>0x207c6eefd47f5d943f167504bf2cc1c6fa764803</td></tr>
-          <tr><td>EnergyMarket</td><td>0xe21c780c163fd65e8962cfbaea143d825cc7b8e8</td></tr>
+          <tr><td>Game</td><td>0x58c2400527813f78fc7ed498dd4ec66dc7787e73</td></tr>
+          <tr><td>SES Token</td><td>0x1491e226292cf61aba5717828540c0f2518301c6</td></tr>
+          <tr><td>DailyMinter</td><td>0x52ca63564e15ed70d012a70ea14d9d2e3701be1d</td></tr>
+          <tr><td>EnergyMarket</td><td>0x2dc9fff0edf2f4e1495eb8bb9b7ca117c635bf77</td></tr>
         </tbody></table>
         <p>SES 用途：升级/跳跃/重建燃烧，联盟退出分配，能量市场与 DEX 交易（PancakeSwap 2.5% 税：1% 开发者 +1.5% 市场）。详见 <a href="https://docs.strifelabs.com/docs/economy/ses-overview">SES 概览</a>。</p>
       </section>
@@ -97,6 +97,19 @@ export function MarketingShell() {
           <li><a href="https://github.com/silent-expanse/web3/blob/main/WHITEPAPER.md">WHITEPAPER.md</a> · <a href="https://github.com/silent-expanse/web3/blob/main/SPECIFICATION.md">SPECIFICATION.md</a> · <a href="https://github.com/silent-expanse/web3/blob/main/SECURITY_AUDIT_V10.md">SECURITY_AUDIT_V10.md</a></li>
           <li>AI 内容入口：<a href="/llms.txt">/llms.txt</a> · <a href="/llms-full.txt">/llms-full.txt</a> · <a href="/sitemap.xml">/sitemap.xml</a></li>
         </ul>
+      </section>
+
+      <section className="seo-section" id="links">
+        <h2>友情链接 · 合作伙伴</h2>
+        <p style={{ color: '#5a6a84', fontSize: '0.82rem', marginBottom: '10px' }}>与 BSC / GameFi / AI 生态互换流量，申请请邮件 <a href="mailto:strifelabs@proton.me?subject=友情链接交换申请">strifelabs@proton.me</a>（回链锚文本 <code>Silent Expanse: Strife</code> → <code>https://strifelabs.com/</code>，数据源 <a href="/links.json">/links.json</a>）</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          <a href="https://www.bnbchain.org/" target="_blank" rel="noopener" style={{ display: 'inline-block', padding: '6px 10px', border: '1px solid #1E2A45', borderRadius: '20px', background: 'rgba(19,26,43,0.6)', fontSize: '0.82rem' }}>BNB Chain</a>
+          <a href="https://bscscan.com/address/0x58c2400527813f78fc7ed498dd4ec66dc7787e73" target="_blank" rel="noopener" style={{ display: 'inline-block', padding: '6px 10px', border: '1px solid #1E2A45', borderRadius: '20px', background: 'rgba(19,26,43,0.6)', fontSize: '0.82rem' }}>BscScan 合约</a>
+          <a href="https://pancakeswap.finance/" target="_blank" rel="noopener" style={{ display: 'inline-block', padding: '6px 10px', border: '1px solid #1E2A45', borderRadius: '20px', background: 'rgba(19,26,43,0.6)', fontSize: '0.82rem' }}>PancakeSwap</a>
+          <a href="https://docs.strifelabs.com/" target="_blank" rel="noopener" style={{ display: 'inline-block', padding: '6px 10px', border: '1px solid #1E2A45', borderRadius: '20px', background: 'rgba(19,26,43,0.6)', fontSize: '0.82rem' }}>Strife Docs</a>
+          <a href="https://github.com/silent-expanse/web3" target="_blank" rel="noopener" style={{ display: 'inline-block', padding: '6px 10px', border: '1px solid #1E2A45', borderRadius: '20px', background: 'rgba(19,26,43,0.6)', fontSize: '0.82rem' }}>GitHub 开源</a>
+          <a href="mailto:strifelabs@proton.me?subject=友情链接交换申请-来自strifelabs.com" style={{ display: 'inline-block', padding: '6px 10px', border: '1px dashed rgba(0,212,170,0.4)', borderRadius: '20px', background: 'rgba(0,212,170,0.08)', fontSize: '0.82rem', color: '#00D4AA' }}>＋ 虚位以待 · 申请交换</a>
+        </div>
       </section>
 
       <footer className="seo-foot">
