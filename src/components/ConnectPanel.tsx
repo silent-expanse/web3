@@ -339,8 +339,6 @@ export function ConnectPanel() {
     return () => { cancelled = true; };
   }, [wagmiConnected, wagmiAddress, ct.isReady, ct.contractUnavailable]);
 
-  /* ── 入场费 ── */
-  useEffect(() => {
   // #03 BNB → USD 折算（Binance 公共接口，失败静默）
   useEffect(() => {
     let cancelled = false;
@@ -356,6 +354,8 @@ export function ConnectPanel() {
     return () => { cancelled = true; clearInterval(id); };
   }, []);
 
+  /* ── 入场费 ── */
+  useEffect(() => {
     const calcProgress = (feeStr: string) => {
       const f = parseFloat(feeStr);
       if (!Number.isFinite(f)) return 0;

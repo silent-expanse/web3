@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { useGameStore } from '../hooks/useGameStore';
 import { useContract } from '../hooks/useContract';
@@ -98,31 +98,29 @@ export function BattleLog() {
     return battleLog;
   }, [battleLog, address, filter]);
 
-  // Try to resolve unknown names lazily via civ batch (fire-and-forget, cached in enemyCivs)
-  // Trigger once on mount / when log changes
-  if (ct.game && filtered.length > 0 && address) {
+  // 异步解析未知地址的文明名（移入 effect，避免渲染期副作用）
+  useEffect(() => {
+    if (!ct.game || filtered.length === 0 || !address) return;
     const unknown = new Set<string>();
     for (const b of filtered.slice(0, 20)) {
       if (!enemyCivs.has(b.attacker) && b.attacker.toLowerCase() !== address.toLowerCase()) unknown.add(b.attacker);
       if (!enemyCivs.has(b.defender) && b.defender.toLowerCase() !== address.toLowerCase()) unknown.add(b.defender);
     }
-    if (unknown.size > 0 && unknown.size <= 6) {
-      const addrs = [...unknown];
-      // fire-and-forget batch
-      (ct.game.getCivilizations as unknown as (a: string[]) => Promise<unknown[]>)(addrs).then(raws => {
-        (raws as Record<string, unknown>[]).forEach((r, i) => {
-          const a = addrs[i];
-          if (r && !useGameStore.getState().enemyCivs.has(a)) {
-            try {
-              const n = String((r as { name?: unknown }).name ?? '');
-              const civ = { name: n, x: 0, y: 0, z: 0, energy: Number((r as { energy?: unknown }).energy ?? 0), health: Number((r as { health?: unknown }).health ?? 0), shieldHP: 0, maxShieldHP: 0, energyCollectorLv: 1, weaponLv: 1, radarLv: 1, shieldLv: 1, engineLv: 1, scanRange: 1000, isRuins: false, isMoving: false } as import('../hooks/useGameStore').Civilization;
-              useGameStore.getState().addEnemyCiv(a, civ);
-            } catch { /* ignore */ }
-          }
-        });
-      }).catch(() => {});
-    }
-  }
+    if (unknown.size === 0 || unknown.size > 6) return;
+    const addrs = [...unknown];
+    (ct.game.getCivilizations as unknown as (a: string[]) => Promise<unknown[]>)(addrs).then(raws => {
+      (raws as Record<string, unknown>[]).forEach((r, i) => {
+        const a = addrs[i];
+        if (r && !useGameStore.getState().enemyCivs.has(a)) {
+          try {
+            const n = String((r as { name?: unknown }).name ?? '');
+            const civ = { name: n, x: 0, y: 0, z: 0, energy: Number((r as { energy?: unknown }).energy ?? 0), health: Number((r as { health?: unknown }).health ?? 0), shieldHP: 0, maxShieldHP: 0, energyCollectorLv: 1, weaponLv: 1, radarLv: 1, shieldLv: 1, engineLv: 1, scanRange: 1000, isRuins: false, isMoving: false } as import('../hooks/useGameStore').Civilization;
+            useGameStore.getState().addEnemyCiv(a, civ);
+          } catch { /* ignore */ }
+        }
+      });
+    }).catch(() => {});
+  }, [ct.game, filtered, address, enemyCivs]);
 
   return (
     <Panel $mobile={false}>
