@@ -277,9 +277,11 @@ export function EnergyMarket() {
         {/* 公共挂单 */}
         <SectionSubTitle>{t('market.public_orders')} · {publicOrders.length}</SectionSubTitle>
         {publicOrders.length === 0 && myOrders.length === 0 ? (
-          <Row style={{ justifyContent: 'center', color: THEME.text.secondary, padding: 16 }}>
-            {t('market.empty')}
-          </Row>
+          <div style={{ textAlign: 'center', padding: 16, color: THEME.text.secondary, lineHeight: 1.6 }}>
+            <div style={{ fontSize: '1.4rem' }}>📊</div>
+            <div>{t('market.empty')}</div>
+            <div style={{ fontSize: '0.68rem', opacity: 0.7, marginTop: 4 }}>{t('general.empty_cta')}</div>
+          </div>
         ) : publicOrders.length === 0 ? (
           <Row style={{ justifyContent: 'center', color: THEME.text.secondary, padding: 12 }}>
             {t('market.empty')}

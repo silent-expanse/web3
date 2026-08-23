@@ -236,6 +236,7 @@ export function AlliancePanel() {
                   return (
                     <Row key={i}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: THEME.accent.green, boxShadow: `0 0 4px ${THEME.alpha(THEME.accent.green, 0.6)}`, flexShrink: 0, opacity: 0.9 }} title="在线" />
                         {isThisLeader && <RoleTag $leader>{t('alliance.leader')}</RoleTag>}
                         <span style={{ color: isSelf ? THEME.accent.green : THEME.text.secondary, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {m.slice(0, 6)}...{m.slice(-4)}

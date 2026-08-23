@@ -156,7 +156,7 @@ export function ToastContainer() {
   if (toasts.length === 0) return null;
 
   return (
-    <Container>
+    <Container aria-live="polite" aria-atomic="true">
       {toasts.map(t => (
         <ToastItem key={t.id} t={t} />
       ))}

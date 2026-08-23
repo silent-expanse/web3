@@ -22,8 +22,8 @@ const Nav = styled.nav`
   justify-content: space-between;
   background: rgba(0, 0, 0, 0.85);
   border-top: 1px solid rgba(0, 255, 136, 0.15);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(${THEME.blur.bar});
+  -webkit-backdrop-filter: blur(${THEME.blur.bar});
   pointer-events: auto;
   z-index: 150;
   padding: 0 0 env(safe-area-inset-bottom, 0px) 0;
@@ -41,7 +41,7 @@ const TabButton = styled.button<{ $active: boolean; $color: string }>`
   background: transparent;
   border: none;
   border-top: 2px solid ${({ $active, $color }) => ($active ? $color : 'transparent')};
-  color: ${({ $active, $color }) => ($active ? $color : '#446688')};
+  color: ${({ $active, $color }) => ($active ? $color : '#6a7d94')};
   font-family: 'Courier New', monospace;
   font-size: 0.75rem;
   letter-spacing: 0.5px;

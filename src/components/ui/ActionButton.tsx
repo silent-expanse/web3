@@ -22,19 +22,22 @@ const variantStyles = {
     background: ${THEME.accent.green};
     color: ${THEME.bg};
     border: none;
-    &:hover:not(:disabled) { background: ${THEME.alpha(THEME.accent.green, 0.85)}; }
+    &:hover:not(:disabled) { background: ${THEME.alpha(THEME.accent.green, 0.92)}; filter: brightness(1.05); }
+    &:active:not(:disabled) { background: ${THEME.alpha(THEME.accent.green, 0.82)}; }
   `,
   danger: css`
     background: ${THEME.accent.red};
     color: #fff;
     border: none;
-    &:hover:not(:disabled) { background: ${THEME.alpha(THEME.accent.red, 0.85)}; }
+    &:hover:not(:disabled) { background: ${THEME.alpha(THEME.accent.red, 0.92)}; filter: brightness(1.05); }
+    &:active:not(:disabled) { background: ${THEME.alpha(THEME.accent.red, 0.82)}; }
   `,
   ghost: css`
     background: transparent;
     color: ${THEME.text.secondary};
     border: 1px solid ${THEME.border};
-    &:hover:not(:disabled) { background: ${hoverBg(THEME.border)}; }
+    &:hover:not(:disabled) { background: ${hoverBg(THEME.border)}; border-color: ${THEME.alpha(THEME.accent.green, 0.3)}; }
+    &:active:not(:disabled) { background: ${THEME.alpha(THEME.border, 0.25)}; }
   `,
 };
 
@@ -52,11 +55,11 @@ const StyledButton = styled.button<{ $variant: Variant }>`
   min-height: 36px;
   @media (max-width: 767px) { min-height: 44px; padding: 10px 16px; }
   -webkit-tap-highlight-color: transparent;
-  transition: background 0.15s, opacity 0.15s;
+  transition: background ${THEME.transition.fast}, opacity ${THEME.transition.fast}, transform ${THEME.transition.fast}, filter ${THEME.transition.fast};
   white-space: nowrap;
   ${({ $variant }) => variantStyles[$variant]}
   &:disabled { opacity: 0.35; cursor: not-allowed; }
-  &:active { opacity: 0.7; }
+  &:active:not(:disabled) { opacity: 0.92; transform: scale(0.98); }
 `;
 
 /**

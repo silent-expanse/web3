@@ -66,7 +66,7 @@ const dfTheme = {
     standby: '#FFD93D',
   },
   fonts: {
-    body: "'Courier New', monospace",
+    body: "'JetBrains Mono','Courier New',monospace",
   },
   radii: {
     ...darkTheme().radii,

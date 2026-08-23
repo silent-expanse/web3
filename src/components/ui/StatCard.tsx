@@ -18,13 +18,17 @@ interface StatCardProps {
 const Card = styled.div<{ $warn?: boolean }>`
   background: ${THEME.alpha(THEME.card, 0.6)};
   border: 1px solid ${({ $warn }) => ($warn ? THEME.status.warning : THEME.border)};
-  border-radius: 8px;
-  padding: 12px;
+  border-radius: ${THEME.radius.md};
+  padding: ${THEME.space.md};
   display: flex;
   flex-direction: column;
   height: 100%;
-  transition: border-color 0.2s;
-  &:hover { border-color: ${({ $warn }) => ($warn ? THEME.status.warning : THEME.alpha(THEME.accent.green, 0.3))}; }
+  box-shadow: ${THEME.elevation.card};
+  transition: border-color ${THEME.transition.fast}, box-shadow ${THEME.transition.fast};
+  &:hover {
+    border-color: ${({ $warn }) => ($warn ? THEME.status.warning : THEME.alpha(THEME.accent.green, 0.32))};
+    box-shadow: 0 0 12px ${THEME.alpha(THEME.accent.green, 0.12)}, ${THEME.elevation.card};
+  }
 `;
 
 const Header = styled.div`

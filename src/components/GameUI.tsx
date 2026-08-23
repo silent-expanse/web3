@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useGameStore } from '../hooks/useGameStore';
 import { useContract } from '../hooks/useContract';
@@ -82,6 +82,24 @@ function ContractUnavailableBanner() {
   );
 }
 
+function EpochRing({ size = 18 }: { size?: number }) {
+  const start = useGameStore(s => s.epochStartTime);
+  const end = useGameStore(s => s.epochEndTime);
+  const now = useTicker(1000);
+  if (!start || !end) return null;
+  const total = (end - start) * 1000;
+  const elapsed = now - start * 1000;
+  const p = Math.min(1, Math.max(0, elapsed / total));
+  const r = (size - 2) / 2;
+  const c = 2 * Math.PI * r;
+  return (
+    <svg width={size} height={size} style={{ display: 'inline-block', verticalAlign: 'middle' }}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={THEME.alpha(THEME.border, 0.5)} strokeWidth={1.5} />
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={THEME.accent.green} strokeWidth={1.5} strokeDasharray={c} strokeDashoffset={c * (1 - p)} strokeLinecap="round" transform={`rotate(-90 ${size/2} ${size/2})`} style={{ transition: 'stroke-dashoffset 1s linear' }} />
+    </svg>
+  );
+}
+
 /* ─── Types ─── */
 type PageId = 'overview' | 'actions' | 'combat' | 'tech' | 'alliance' | 'market' | 'leaderboard' | 'links';
 
@@ -123,6 +141,8 @@ const TopBar = styled.div`
   padding: 8px 16px;
   padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
   background: ${THEME.alpha(THEME.card, 0.8)};
+  backdrop-filter: blur(${THEME.blur.bar});
+  -webkit-backdrop-filter: blur(${THEME.blur.bar});
   border-bottom: 1px solid ${THEME.border};
   flex-shrink: 0;
   min-height: 56px;
@@ -269,12 +289,19 @@ const Content = styled.main`
   padding: 16px 20px;
 `;
 
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
 const ContentInner = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  animation: ${fadeIn} 150ms ease-out;
+  @media (prefers-reduced-motion: reduce) { animation: none; }
 `;
 
 /* ─── Mobile tab color mapping (kept from original) ─── */
@@ -314,8 +341,8 @@ const MobileContent = styled.div`
 const PageTitle = styled.h2`
   color: ${THEME.text.primary};
   font-size: 1.1rem;
-  font-family: 'Courier New', monospace;
-  font-weight: bold;
+  font-family: ${THEME.font.display};
+  font-weight: 700;
   letter-spacing: 1px;
   margin: 0 0 4px 0;
 `;
@@ -373,6 +400,7 @@ function DesktopLayout() {
     setPage(id);
     try { window.location.hash = id; } catch { /* ignore */ }
   }, []);
+  const density = useGameStore(s => s.density);
   const playerCiv = useGameStore(s => s.playerCiv);
   const address = useGameStore(s => s.address);
   const ses = useGameStore(s => s.sesBalance);
@@ -416,7 +444,12 @@ function DesktopLayout() {
     })();
     return (
       <>
-        <PageTitle><SystemIcon icon={PAGE_ICONS[page]} /> {t(PAGE_TITLES[page])}</PageTitle>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <PageTitle><SystemIcon icon={PAGE_ICONS[page]} /> {t(PAGE_TITLES[page])}</PageTitle>
+          {page === 'overview' && currentEpoch > 0 && (
+            <span style={{ color: THEME.text.secondary, fontSize: '0.7rem', fontFamily: THEME.font.mono, opacity: 0.8, display: 'inline-flex', alignItems: 'center', gap: 4 }}><EpochRing size={14} />{t('general.epoch')} #{currentEpoch}</span>
+          )}
+        </div>
         <PageDivider />
         {content}
       </>
@@ -465,6 +498,9 @@ function DesktopLayout() {
         </DailyClaimBtn>
         <TopBarLink href="https://docs.strifelabs.com" target="_blank">{t('connect.tutorial')}</TopBarLink>
         <TopBarLangBtn onClick={toggleLang}>{t('connect.lang_switch')}</TopBarLangBtn>
+        <TopBarLangBtn onClick={() => useGameStore.getState().setDensity(density === 'compact' ? 'comfortable' : 'compact')} title={density === 'compact' ? '切换至舒适视图' : '切换至紧凑视图'}>
+          {density === 'compact' ? '⟡' : '◎'}
+        </TopBarLangBtn>
       </TopBar>
 
       <MainArea>
@@ -473,6 +509,7 @@ function DesktopLayout() {
             <NavBtn
               key={item.id}
               $active={page === item.id}
+              aria-current={page === item.id ? 'page' : undefined}
               onClick={() => navigate(item.id)}
             >
               <NavIcon><SystemIcon icon={item.icon} /></NavIcon>
@@ -482,7 +519,7 @@ function DesktopLayout() {
         </Sidebar>
 
         <Content>
-          <ContentInner>
+          <ContentInner key={page}>
             {ct.contractUnavailable && ct.isReady && <ContractUnavailableBanner />}
             {renderPage()}
           </ContentInner>
@@ -640,6 +677,26 @@ function MobileLayout() {
    ════════════════════════════════════════════ */
 export function GameUI() {
   const isMobile = useIsMobile();
+  // 彩蛋：Konami 序列 + 888 SES 余额触发彩字
+  const ses = useGameStore(s => s.sesBalance);
+  const [egg, setEgg] = useState(false);
+  useEffect(() => {
+    const seq = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+    let idx = 0;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === seq[idx]) { idx++; if (idx === seq.length) { setEgg(true); setTimeout(()=>setEgg(false), 2500); useGameStore.getState().addToast('◈ 沉默引擎共鸣 ◈', 'success'); idx=0; } }
+      else idx = e.key === seq[0] ? 1 : 0;
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+  useEffect(() => { if (ses === '888.00' || ses === '888') { setEgg(true); const t=setTimeout(()=>setEgg(false),2000); return()=>clearTimeout(t);} }, [ses]);
+
+  if (egg) {
+    // 轻量彩蛋：全站 hue 旋转
+    document.documentElement.style.filter = 'hue-rotate(90deg)';
+    setTimeout(()=>{ document.documentElement.style.filter=''; }, 2000);
+  }
 
   if (isMobile) {
     return <MobileLayout />;
@@ -661,8 +718,8 @@ const MobileHudBar = styled.div`
   align-items: center;
   gap: 6px;
   background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(${THEME.blur.bar});
+  -webkit-backdrop-filter: blur(${THEME.blur.bar});
   border-bottom: 1px solid rgba(0, 255, 136, 0.1);
   padding: 6px 10px;
   padding-top: calc(env(safe-area-inset-top, 0px) + 6px);

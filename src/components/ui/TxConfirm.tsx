@@ -59,9 +59,12 @@ const Title = styled.div`
 const Body = styled.div`
   color: ${THEME.text.secondary};
   font-size: 0.8rem;
-  font-family: 'Courier New', monospace;
+  font-family: ${THEME.font.mono};
   line-height: 1.6;
   margin-bottom: 16px;
+  strong { color: ${THEME.accent.gold}; font-weight: 700; }
+  em { color: ${THEME.accent.red}; font-style: normal; }
+  b { color: ${THEME.text.primary}; }
 `;
 
 const Footer = styled.div`

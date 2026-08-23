@@ -91,8 +91,8 @@ const Scrim = styled.div<{ $dense?: boolean }>`
   z-index: 2;
   background: ${({ $dense }) =>
     $dense
-      ? 'linear-gradient(180deg, rgba(8,12,24,0.88) 0%, rgba(8,12,24,0.62) 45%, rgba(4,6,14,0.92) 100%)'
-      : 'linear-gradient(180deg, rgba(10,14,23,0.82) 0%, rgba(10,14,23,0.55) 45%, rgba(6,8,18,0.9) 100%)'};
+      ? 'linear-gradient(180deg, rgba(8,12,24,0.92) 0%, rgba(8,12,24,0.72) 45%, rgba(4,6,14,0.95) 100%)'
+      : 'linear-gradient(180deg, rgba(10,14,23,0.86) 0%, rgba(10,14,23,0.62) 45%, rgba(6,8,18,0.93) 100%)'};
   pointer-events: none;
 `;
 

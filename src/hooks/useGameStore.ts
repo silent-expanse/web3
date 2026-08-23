@@ -99,6 +99,8 @@ interface GameState {
   attackFlashAt: number;
 
   /* ─── toast notifications ─── */
+  density: 'comfortable' | 'compact';
+
   toasts: Toast[];
   /* ─── active attack beams (3D) ─── */
   attackBeams: AttackBeam[];
@@ -122,6 +124,7 @@ interface GameState {
   setError: (error: string | null) => void;
   markBattlesSeen: () => void;
   triggerAttackFlash: () => void;
+  setDensity: (d: 'comfortable' | 'compact') => void;
 
   /* ─── toast ─── */
   addToast: (message: string, type?: Toast['type']) => void;
@@ -204,6 +207,7 @@ export const useGameStore = create<GameState>((set) => ({
   lastSyncAt: 0,
   seenBattleCount: 0,
   attackFlashAt: 0,
+  density: (typeof localStorage !== 'undefined' && (localStorage.getItem('ses_density') as 'comfortable' | 'compact') ) || 'comfortable',
 
   toasts: [],
   attackBeams: [],
@@ -269,6 +273,10 @@ export const useGameStore = create<GameState>((set) => ({
   setError: (error) => set({ error }),
   markBattlesSeen: () => set((s) => ({ seenBattleCount: s.battleLog.length })),
   triggerAttackFlash: () => set({ attackFlashAt: Date.now() }),
+  setDensity: (d) => {
+    try { localStorage.setItem('ses_density', d); } catch { /* ignore */ }
+    set({ density: d });
+  },
 
   /* ─── toast ─── */
   addToast: (message, type = 'info') => {

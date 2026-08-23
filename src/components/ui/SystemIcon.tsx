@@ -7,12 +7,13 @@ import styled from 'styled-components';
  * 所有图标统一走此组件，便于从 emoji 迁移到图片装备。
  */
 const Img = styled.img`
-  width: 1.2em;
-  height: 1.2em;
-  vertical-align: -0.25em;
+  width: 16px;
+  height: 16px;
+  vertical-align: -3px;
   object-fit: contain;
   image-rendering: auto;
   flex-shrink: 0;
+  /* 20px 变体由 size prop 覆盖 */
 `;
 
 const Emoji = styled.span`

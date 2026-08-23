@@ -11,6 +11,12 @@ import { THEME } from '../theme';
 import { useI18n } from '../hooks/useI18n';
 import { fmt, fmtCompact, fmtCoord } from '../utils/format';
 
+const shake = keyframes`
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+`;
+
 /* ─── Layout ─── */
 
 const Container = styled.div<{ $mobile: boolean }>`
@@ -77,24 +83,27 @@ const StatPill = styled.div<{ $color: string }>`
 
 const StatLabel = styled.div`
   color: ${THEME.text.secondary};
-  font-size: 0.68rem;
-  font-family: 'Courier New', monospace;
+  font-size: 0.62rem;
+  font-family: ${THEME.font.mono};
   text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 2px;
+  letter-spacing: 1.4px;
+  margin-bottom: 3px;
+  opacity: 0.9;
 `;
 
 const StatValue = styled.div<{ $color: string }>`
   color: ${({ $color }) => $color};
-  font-size: 1rem;
-  font-family: 'Courier New', monospace;
-  font-weight: bold;
+  font-size: 1.08rem;
+  font-family: ${THEME.font.mono};
+  font-weight: 700;
+  line-height: 1.1;
 `;
 
 const StatRate = styled.div`
   color: ${THEME.text.secondary};
-  font-size: 0.65rem;
-  font-family: 'Courier New', monospace;
+  font-size: 0.62rem;
+  font-family: ${THEME.font.mono};
+  opacity: 0.85;
 `;
 
 export function HUD() {
@@ -174,12 +183,13 @@ export function HUD() {
 
   return (
     <Container $mobile={isMobile}>
-      {/* Error */}
+      {/* Error – 抖动提示 */}
       {error && (
         <div onClick={clearError} style={{
-          color: THEME.accent.red, fontSize: '0.78rem', fontFamily: "'Courier New', monospace",
-          padding: '6px 10px', background: THEME.alpha(THEME.accent.red, 0.1), borderRadius: 6,
+          color: THEME.accent.red, fontSize: '0.78rem', fontFamily: THEME.font.mono,
+          padding: '6px 10px', background: THEME.alpha(THEME.accent.red, 0.1), borderRadius: THEME.radius.sm,
           cursor: 'pointer', textAlign: 'center', border: `1px solid ${THEME.alpha(THEME.accent.red, 0.2)}`,
+          animation: `${shake} 240ms ease-out`,
         }}>
           {t('hud.error_dismiss', { msg: error })}
         </div>

@@ -132,7 +132,7 @@ export function Leaderboard() {
     return (
       <Panel>
         <SectionTitle><SystemIcon icon="/assets/systems/trophy.web.png" /> {t('nav.leaderboard')}</SectionTitle>
-        <div style={{ color: THEME.text.secondary, textAlign: 'center', padding: 20, fontSize: '0.78rem', lineHeight: 1.6 }}>
+        <div style={{ color: THEME.text.secondary, textAlign: 'center', padding: 12, fontSize: '0.78rem', lineHeight: 1.6 }}>
           <div style={{ fontSize: '1.6rem', marginBottom: 6 }}>🏆</div>
           {t('leaderboard.empty')}
           <div style={{ fontSize: '0.68rem', opacity: 0.7, marginTop: 4 }}>{t('general.empty_cta')}</div>

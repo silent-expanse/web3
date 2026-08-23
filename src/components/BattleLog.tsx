@@ -45,8 +45,9 @@ const LogRow = styled.div`
   border-bottom: 1px solid ${THEME.alpha(THEME.border, 0.3)};
   font-size: 0.76rem;
   font-family: 'Courier New', monospace;
+  &:nth-child(even) { background: ${THEME.alpha(THEME.border, 0.08)}; }
   &:last-child { border-bottom: none; }
-  &:hover { background: ${THEME.alpha(THEME.accent.green, 0.03)}; }
+  &:hover { background: ${THEME.alpha(THEME.accent.green, 0.06)}; }
 `;
 
 const Empty = styled.div`
@@ -70,10 +71,10 @@ const CTA = styled.button`
   &:hover { background: ${THEME.alpha(THEME.accent.green, 0.1)}; }
 `;
 
-const Attacker = styled.span` color: ${THEME.accent.red}; `;
+const Attacker = styled.span` color: ${THEME.status.loss}; `;
 const Defender = styled.span` color: ${THEME.accent.shield}; `;
-const Dmg = styled.span` color: ${THEME.accent.gold}; `;
-const Won = styled.span` color: ${THEME.accent.green}; `;
+const Dmg = styled.span` color: ${THEME.status.profit}; `;
+const Won = styled.span` color: ${THEME.status.success}; `;
 const Lost = styled.span` color: ${THEME.text.secondary}; `;
 const Time = styled.span` color: ${THEME.text.secondary}; font-size: 0.68rem; `;
 const Meta = styled.span` color: ${THEME.text.secondary}; font-size: 0.7rem; `;

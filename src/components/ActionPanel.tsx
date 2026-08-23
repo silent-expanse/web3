@@ -153,11 +153,13 @@ const InputRow = styled.div`
 const GroupLabel = styled.div`
   color: ${THEME.text.secondary};
   font-size: 0.65rem;
-  font-family: 'Courier New', monospace;
+  font-family: ${THEME.font.mono};
   text-transform: uppercase;
   letter-spacing: 1.5px;
-  margin: 10px 0 4px 0;
-  opacity: 0.6;
+  margin: 12px 0 6px 0;
+  padding-left: 6px;
+  border-left: 2px solid ${THEME.alpha(THEME.accent.green, 0.5)};
+  opacity: 0.9;
 `;
 
 const Divider = styled.div`
