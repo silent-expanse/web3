@@ -55,6 +55,11 @@ const Video = styled.video<{ $opacity: number }>`
   object-fit: cover;
   z-index: 0;
   opacity: ${({ $opacity }) => $opacity};
+  /* #85 移动端降级：小屏隐藏视频用静态星云，省流量/电量 */
+  @media (max-width: 767px) {
+    display: none;
+  }
+  /* #28 保障 autoplay 策略：video 已 muted+playsInline+poster */
 `;
 
 const Nebula = styled.div`
@@ -65,6 +70,7 @@ const Nebula = styled.div`
   background-size: cover;
   background-position: center;
   animation: ${slowPan} 90s ease-in-out infinite alternate;
+  @media (prefers-reduced-motion: reduce) { animation: none; }
 `;
 
 const StarLayer = styled.div`
@@ -76,6 +82,7 @@ const StarLayer = styled.div`
   background-size: 1920px 1080px, 1920px 1080px;
   animation: ${drift} 120s linear infinite;
   pointer-events: none;
+  @media (prefers-reduced-motion: reduce) { animation: none; }
 `;
 
 const Scrim = styled.div<{ $dense?: boolean }>`
@@ -123,10 +130,10 @@ export const SpaceBackground = memo(function SpaceBackground({
   const poster = '/assets/bg/nebula.jpg';
   return (
     <Bg aria-hidden="true">
-      {variant === 'hero' ? (
+      {/* #85 移动端降级：hero 分支也先渲染 Nebula 作为视频隐藏后的兜底 */}
+      <Nebula />
+      {variant === 'hero' && (
         <Video autoPlay muted loop playsInline preload="auto" poster={poster} src={src} $opacity={videoOpacity} />
-      ) : (
-        <Nebula />
       )}
       <StarLayer />
       <Scrim $dense={dense} />

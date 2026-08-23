@@ -50,6 +50,8 @@ export interface Toast {
   message: string;
   type: 'success' | 'error' | 'info';
   timestamp: number;
+  /** 成功交易的 hash → 渲染 BscScan 链接（#39） */
+  txHash?: string;
 }
 
 export interface AttackBeam {
@@ -79,7 +81,22 @@ interface GameState {
 
   selectedTarget: string | null;
   loading: boolean;
+  /** 当前正在执行的 action id（per-action loading，#21/#30）：
+   *  'create'|'upgrade'|'attack'|'collect'|'claimCombat'|'distribute'|'claimSES'|
+   *  'move'|'jump'|'rebuild'|'repairCollector'|'repairShield'|'regenShield'|'repairAll'|
+   *  'cancelMove'|'alliance.create'|'alliance.join'|…|'market.sell'|'market.buy'|'market.cancel'
+   *  面板只在自己的 action 执行时显示蒙层，按钮仍用全局 loading 禁用。 */
+  activeAction: string | null;
   error: string | null;
+
+  /* ─── 数据同步健康（#29）：最近一次轮询成功时间 ─── */
+  lastSyncAt: number;
+
+  /* ─── 未读战报（#16）：已读标记，badge = battleLog.length > seenBattleCount ─── */
+  seenBattleCount: number;
+
+  /* ─── 攻击命中闪光（#57）：时间戳，GameUI 消费后播放一次动效 ─── */
+  attackFlashAt: number;
 
   /* ─── toast notifications ─── */
   toasts: Toast[];
@@ -101,11 +118,14 @@ interface GameState {
   setPendingRefund: (amount: number) => void;
   setSelectedTarget: (address: string | null) => void;
   setLoading: (loading: boolean) => void;
+  setActiveAction: (action: string | null) => void;
   setError: (error: string | null) => void;
+  markBattlesSeen: () => void;
+  triggerAttackFlash: () => void;
 
   /* ─── toast ─── */
   addToast: (message: string, type?: Toast['type']) => void;
-  addSuccessToast: (message: string) => void;
+  addSuccessToast: (message: string, txHash?: string) => void;
   addErrorToast: (message: string) => void;
   removeToast: (id: number) => void;
 
@@ -179,7 +199,11 @@ export const useGameStore = create<GameState>((set) => ({
 
   selectedTarget: null,
   loading: false,
+  activeAction: null,
   error: null,
+  lastSyncAt: 0,
+  seenBattleCount: 0,
+  attackFlashAt: 0,
 
   toasts: [],
   attackBeams: [],
@@ -223,6 +247,7 @@ export const useGameStore = create<GameState>((set) => ({
     lastCollectTime: 0, collectRate: 0, collectorDurability: { current: 0, max: 0 }, moveEta: 0, combatBoost: 0, pendingCollect: 0, shieldDefense: 0, attackPower: 0, attackEnergyCost: 0, speed: 0, radarRange: 0, marketOrders: [], _allianceMembers: [], _allianceTotemLevel: 0, _allianceTotemEnergy: 0, _allianceTotemUpgradeCost: 0, _allianceIsLeader: false, _allianceLeader: '', _alliancePendingRefund: 0,
   currentEpoch: 0, epochClaimed: false, lastDistributedEpoch: 0,
     epochStartTime: 0, epochEndTime: 0, dailyEmission: 0,
+    activeAction: null, lastSyncAt: 0, seenBattleCount: 0, attackFlashAt: 0,
   }),
 
   setPlayerCiv: (civ) => set({ playerCiv: civ }),
@@ -240,19 +265,28 @@ export const useGameStore = create<GameState>((set) => ({
   setPendingRefund: (amount) => set({ pendingRefund: amount }),
   setSelectedTarget: (address) => set({ selectedTarget: address }),
   setLoading: (loading) => set({ loading }),
+  setActiveAction: (action) => set({ activeAction: action }),
   setError: (error) => set({ error }),
+  markBattlesSeen: () => set((s) => ({ seenBattleCount: s.battleLog.length })),
+  triggerAttackFlash: () => set({ attackFlashAt: Date.now() }),
 
   /* ─── toast ─── */
   addToast: (message, type = 'info') => {
     const id = ++_toastId;
+    // #32: 错误信息驻留更久（8s），普通信息 3.5s
+    const duration = type === 'error' ? 8000 : 3500;
     set((s) => ({ toasts: [...s.toasts, { id, message, type, timestamp: Date.now() }] }));
     setTimeout(() => {
       set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));
-    }, 3500);
+    }, duration);
   },
-  /** Shorthand: add a success toast */
-  addSuccessToast: (message: string) => {
-    useGameStore.getState().addToast(message, 'success');
+  /** Shorthand: success toast, 可附带交易 hash（#39 → Toast 渲染 BscScan 链接） */
+  addSuccessToast: (message: string, txHash?: string) => {
+    const id = ++_toastId;
+    set((s) => ({ toasts: [...s.toasts, { id, message, type: 'success' as const, timestamp: Date.now(), txHash }] }));
+    setTimeout(() => {
+      set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));
+    }, 6000);
   },
   /** Shorthand: add an error toast and also set store.error */
   addErrorToast: (message: string) => {

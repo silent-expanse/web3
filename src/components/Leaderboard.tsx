@@ -119,8 +119,10 @@ export function Leaderboard() {
     return (
       <Panel>
         <SectionTitle><SystemIcon icon="/assets/systems/trophy.web.png" /> {t('nav.leaderboard')}</SectionTitle>
-        <div style={{ color: THEME.text.secondary, textAlign: 'center', padding: 20, fontSize: '0.78rem' }}>
-          {t('leaderboard.loading')}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} style={{ height: 28, background: THEME.alpha(THEME.border, 0.35), borderRadius: 4, animation: 'pulse 1.2s ease-in-out infinite', opacity: 0.6 - i * 0.08 }} />
+          ))}
         </div>
       </Panel>
     );
@@ -130,8 +132,10 @@ export function Leaderboard() {
     return (
       <Panel>
         <SectionTitle><SystemIcon icon="/assets/systems/trophy.web.png" /> {t('nav.leaderboard')}</SectionTitle>
-        <div style={{ color: THEME.text.secondary, textAlign: 'center', padding: 20, fontSize: '0.78rem' }}>
+        <div style={{ color: THEME.text.secondary, textAlign: 'center', padding: 20, fontSize: '0.78rem', lineHeight: 1.6 }}>
+          <div style={{ fontSize: '1.6rem', marginBottom: 6 }}>🏆</div>
           {t('leaderboard.empty')}
+          <div style={{ fontSize: '0.68rem', opacity: 0.7, marginTop: 4 }}>{t('general.empty_cta')}</div>
         </div>
       </Panel>
     );

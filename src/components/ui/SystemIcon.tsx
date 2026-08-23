@@ -22,7 +22,7 @@ const Emoji = styled.span`
 export function SystemIcon({ icon, size }: { icon: string; size?: number }) {
   const isImage = icon.startsWith('/') || icon.startsWith('data:') || icon.startsWith('http');
   if (isImage) {
-    return <Img src={icon} alt="" style={size ? { width: size, height: size } : undefined} />;
+    return <Img src={icon} alt="" style={size ? { width: size, height: size } : undefined} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />;
   }
   return <Emoji style={size ? { fontSize: size } : undefined}>{icon}</Emoji>;
 }

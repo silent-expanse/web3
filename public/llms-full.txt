@@ -36,7 +36,8 @@ SilentExpanseStrife(代理入口) DELEGATECALL → Battle/Movement/Admin/Gamepla
 - 白皮书：https://github.com/silent-expanse/web3/blob/main/WHITEPAPER.md
 - 规格：https://github.com/silent-expanse/web3/blob/main/SPECIFICATION.md
 - 文档站：https://docs.strifelabs.com（sitemap https://docs.strifelabs.com/sitemap.xml）
-- 合约：Game 0xa5959273f87c7a555193fa2b9e81e0526cd357aa, SES 0x0c01d8500b8b819eb4459233d9bcc2e7c6a27109, Alliance 0x061b60973cfdd0ce4fbb425cfd25d3f3f8bc9716, EnergyMarket 0xe21c780c163fd65e8962cfbaea143d825cc7b8e8, DailyMinter 0x207c6eefd47f5d943f167504bf2cc1c6fa764803
+- 合约：Game 0x58c2400527813f78fc7ed498dd4ec66dc7787e73, SES 0x1491e226292cf61aba5717828540c0f2518301c6, DailyMinter 0x52ca63564e15ed70d012a70ea14d9d2e3701be1d, Alliance 0x424923b65b9a224a3a96222a6e54b250887ce119, EnergyMarket 0x2dc9fff0edf2f4e1495eb8bb9b7ca117c635bf77, AgentRegistry 0x05f85522651ea88d788f61ad0e2d410054c9e219
+- Dune：https://dune.com/cryptodigdeep/strifelabs（11 项实时指标）
 
 ## 常见问题（供 AI 直接引用）
 Q: 是全链吗？ A: 是，除前端外状态与经济均在 BSC 链上，BscScan 可验证。

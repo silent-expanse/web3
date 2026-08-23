@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useGameStore } from '../hooks/useGameStore';
+import { useContract } from '../hooks/useContract';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { useGameActions } from '../hooks/useGameActions';
 import { ConnectPanel } from './ConnectPanel';
@@ -21,6 +22,65 @@ import { useI18n } from '../hooks/useI18n';
 import { THEME } from '../theme';
 import { SpaceBackground } from './SpaceBackground';
 import { fmt, fmtCompact } from '../utils/format';
+import { useTicker } from '../hooks/useTicker';
+
+function SyncBanner() {
+  const lastSyncAt = useGameStore(s => s.lastSyncAt);
+  const now = useTicker(2000);
+  const { t } = useI18n();
+  if (!lastSyncAt) return null;
+  const staleSec = Math.floor((now - lastSyncAt) / 1000);
+  if (staleSec < 20) return null;
+  return (
+    <div style={{
+      background: THEME.alpha(THEME.accent.red, 0.12),
+      borderBottom: `1px solid ${THEME.alpha(THEME.accent.red, 0.25)}`,
+      color: THEME.accent.red,
+      fontSize: '0.72rem',
+      fontFamily: "'Courier New', monospace",
+      textAlign: 'center',
+      padding: '4px 8px',
+    }}>
+      {t('general.sync_stale', { sec: staleSec })}
+    </div>
+  );
+}
+
+function AttackFlash() {
+  const at = useGameStore(s => s.attackFlashAt);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (!at) return;
+    setVisible(true);
+    const id = setTimeout(() => setVisible(false), 400);
+    return () => clearTimeout(id);
+  }, [at]);
+  if (!visible) return null;
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 400,
+      background: `radial-gradient(ellipse at center, ${THEME.alpha(THEME.accent.green, 0.25)} 0%, transparent 70%)`,
+      animation: 'flash 380ms ease-out',
+    }} />
+  );
+}
+
+function ContractUnavailableBanner() {
+  const { t } = useI18n();
+  return (
+    <div style={{
+      margin: 12,
+      padding: 12,
+      background: THEME.alpha(THEME.accent.red, 0.1),
+      border: `1px solid ${THEME.alpha(THEME.accent.red, 0.3)}`,
+      borderRadius: 8,
+      color: THEME.accent.red,
+      fontFamily: "'Courier New', monospace",
+      fontSize: '0.8rem',
+      textAlign: 'center',
+    }}>{t('toast.contract_unavailable', { name: 'SilentExpanseStrife' })}</div>
+  );
+}
 
 /* ─── Types ─── */
 type PageId = 'overview' | 'actions' | 'combat' | 'tech' | 'alliance' | 'market' | 'leaderboard' | 'links';
@@ -70,6 +130,11 @@ const TopBar = styled.div`
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
+  @media (max-width: 1024px) {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    row-gap: 6px;
+  }
 `;
 
 const CivName = styled.span`
@@ -239,17 +304,20 @@ const MobileContent = styled.div`
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 80px 10px 70px;
+  padding: 56px 10px 70px;
+  @media (max-width: 767px) {
+    padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  }
 `;
 
 /* ─── page title for desktop content ─── */
-const PageTitle = styled.div`
+const PageTitle = styled.h2`
   color: ${THEME.text.primary};
   font-size: 1.1rem;
   font-family: 'Courier New', monospace;
   font-weight: bold;
   letter-spacing: 1px;
-  margin-bottom: 4px;
+  margin: 0 0 4px 0;
 `;
 
 const PageDivider = styled.div`
@@ -287,7 +355,24 @@ const PAGE_ICONS: Record<PageId, string> = {
    Desktop Layout
    ════════════════════════════════════════════ */
 function DesktopLayout() {
-  const [page, setPage] = useState<PageId>('overview');
+  const [page, setPage] = useState<PageId>(() => {
+    const h = (typeof window !== 'undefined' ? window.location.hash.slice(1) : '') as PageId | '';
+    const valid: PageId[] = ['overview','actions','combat','tech','alliance','market','leaderboard','links'];
+    return (valid as string[]).includes(h) ? h as PageId : 'overview';
+  });
+  useEffect(() => {
+    const handler = () => {
+      const h = window.location.hash.slice(1) as PageId;
+      const valid: PageId[] = ['overview','actions','combat','tech','alliance','market','leaderboard','links'];
+      if ((valid as string[]).includes(h)) setPage(h as PageId);
+    };
+    window.addEventListener('hashchange', handler);
+    return () => window.removeEventListener('hashchange', handler);
+  }, []);
+  const navigate = useCallback((id: PageId) => {
+    setPage(id);
+    try { window.location.hash = id; } catch { /* ignore */ }
+  }, []);
   const playerCiv = useGameStore(s => s.playerCiv);
   const address = useGameStore(s => s.address);
   const ses = useGameStore(s => s.sesBalance);
@@ -295,8 +380,10 @@ function DesktopLayout() {
   const epochClaimed = useGameStore(s => s.epochClaimed);
   const { t, toggleLang } = useI18n();
   const { claimDailySES } = useGameActions();
-  // 链上 getEnergyCollectRate（÷1e6）——必须在条件 return 之前（React Hooks 规则）
+  const ct = useContract();
   const rate = useGameStore(s => s.collectRate);
+  const currentEpoch = useGameStore(s => s.currentEpoch);
+  const epochEndTime = useGameStore(s => s.epochEndTime);
 
   const sesClaimDisabled = loading || epochClaimed;
 
@@ -339,6 +426,8 @@ function DesktopLayout() {
   return (
     <DashboardContainer>
       <SpaceBackground variant="hero" clip="game" dense videoOpacity={0.5} />
+      <AttackFlash />
+      <SyncBanner />
       <TopBar>
         <CivName>{playerCiv.name}</CivName>
         <CivAddr>{shortAddr}</CivAddr>
@@ -355,9 +444,9 @@ function DesktopLayout() {
           <PillValue $color={THEME.accent.green}>{fmt(playerCiv.energy)}</PillValue>
         </Pill>
 
-        <Pill $color="#44ff88">
+        <Pill $color={THEME.accent.mint}>
           <PillLabel><SystemIcon icon="/assets/systems/energy.web.png" />/s</PillLabel>
-          <PillValue $color="#44ff88">{rate}</PillValue>
+          <PillValue $color={THEME.accent.mint}>{rate}</PillValue>
         </Pill>
 
         <Pill $color={THEME.accent.red}>
@@ -384,7 +473,7 @@ function DesktopLayout() {
             <NavBtn
               key={item.id}
               $active={page === item.id}
-              onClick={() => setPage(item.id)}
+              onClick={() => navigate(item.id)}
             >
               <NavIcon><SystemIcon icon={item.icon} /></NavIcon>
               {t(item.label)}
@@ -394,6 +483,7 @@ function DesktopLayout() {
 
         <Content>
           <ContentInner>
+            {ct.contractUnavailable && ct.isReady && <ContractUnavailableBanner />}
             {renderPage()}
           </ContentInner>
         </Content>
@@ -405,7 +495,7 @@ function DesktopLayout() {
       <LoreFooter>
         <LoreFooterText>{t('lore.footer_quote')}</LoreFooterText>
         <LoreFooterEpoch>
-          {t('lore.epoch_label')} #{'—'} · {t('lore.engine_status')}
+          {t('lore.epoch_label')} #{currentEpoch || '—'} · {t('lore.engine_status')}
         </LoreFooterEpoch>
         <LoreFooterVersion>v0.1.0 · {__APP_COMMIT__}</LoreFooterVersion>
       </LoreFooter>
@@ -426,6 +516,11 @@ const LoreFooter = styled.div`
   background: ${THEME.alpha(THEME.card, 0.75)};
   border-top: 1px solid ${THEME.alpha(THEME.accent.green, 0.16)};
   min-height: 48px;
+  @media (max-width: 767px) {
+    padding: 6px 12px;
+    min-height: 36px;
+    font-size: 0.72rem;
+  }
 `;
 
 const LoreFooterText = styled.span`
@@ -455,6 +550,7 @@ const LoreFooterVersion = styled.span`
    ════════════════════════════════════════════ */
 function MobileLayout() {
   const { t } = useI18n();
+  const currentEpoch = useGameStore(s => s.currentEpoch);
   const connected = useGameStore(s => s.connected);
   const playerCiv = useGameStore(s => s.playerCiv);
   const address = useGameStore(s => s.address);
@@ -465,14 +561,14 @@ function MobileLayout() {
   const loading = useGameStore(s => s.loading);
   const collectRate = useGameStore(s => s.collectRate); // 链上 getEnergyCollectRate（÷1e6）
 
-  const [activeTab, setActiveTab] = useState<TabId | null>(null);
+  const [activeTab, setActiveTab] = useState<TabId | null>('hud');
   const [prevConnected, setPrevConnected] = useState(connected);
 
   // 账户连接状态变化 → 副作用处理（禁止渲染期间 setState，避免 React #310 hooks 数变化）
   useEffect(() => {
     if (connected !== prevConnected) {
       setPrevConnected(connected);
-      if (!connected) setActiveTab(null);
+      if (!connected) setActiveTab('hud');
     }
   }, [connected, prevConnected]);
 
@@ -488,6 +584,8 @@ function MobileLayout() {
   return (
     <MobileContainer>
       <SpaceBackground variant="hero" clip="game" dense videoOpacity={0.4} />
+      <AttackFlash />
+      <SyncBanner />
       <ToastContainer />
 
       {/* Compact HUD bar — 只留名称 + 钱包；状态展示在「状态」tab 的 HUD 页 */}
@@ -520,13 +618,7 @@ function MobileLayout() {
         {activeTab === 'market' && <EnergyMarket />}
         {activeTab === 'alliance' && <AlliancePanel />}
         {activeTab === 'links' && <LinksPanel />}
-        {activeTab === null && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <HUD />
-            <UpgradeRecommendation />
-            <Leaderboard />
-          </div>
-        )}
+        {activeTab === 'hud' && null /* handled above */}
       </MobileContent>
 
       <MobileNav activeTab={activeTab} onTabChange={setActiveTab} />
@@ -535,7 +627,7 @@ function MobileLayout() {
       <LoreFooter>
         <LoreFooterText>{t('lore.footer_quote')}</LoreFooterText>
         <LoreFooterEpoch>
-          {t('lore.epoch_label')} #{'—'} · {t('lore.engine_status')}
+          {t('lore.epoch_label')} #{currentEpoch || '—'} · {t('lore.engine_status')}
         </LoreFooterEpoch>
         <LoreFooterVersion>v0.1.0 · {__APP_COMMIT__}</LoreFooterVersion>
       </LoreFooter>

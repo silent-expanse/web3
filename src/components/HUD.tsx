@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
-import styled, { css } from 'styled-components';
+import styled, { css, keyframes } from 'styled-components';
 import { useGameStore, type Civilization } from '../hooks/useGameStore';
 import { useIsMobile } from '../hooks/useMediaQuery';
+import { useTicker } from '../hooks/useTicker';
 import { useGameActions } from '../hooks/useGameActions';
 import { SYSTEMS, type SystemKey } from '../utils/constants';
 import { StatCard } from './ui/StatCard';
@@ -104,6 +105,8 @@ export function HUD() {
   const pending = useGameStore(s => s.pendingEnergy);
   const tokens = useGameStore(s => s.attackTokens);
   const loading = useGameStore(s => s.loading);
+  const activeAction = useGameStore(s => s.activeAction);
+  const isHudLoading = activeAction === 'rebuild' || activeAction === 'repairCollector';
   const error = useGameStore(s => s.error);
   const isMobile = useIsMobile();
 
@@ -120,6 +123,11 @@ export function HUD() {
   const defVal = useGameStore(s => s.shieldDefense);
   const speedVal = useGameStore(s => s.speed);
   const radarVal = useGameStore(s => s.radarRange);
+  // #24 插值：pendingCollect 实时增长
+  const pendingCollectBase = useGameStore(s => s.pendingCollect);
+  const lastSyncAt = useGameStore(s => s.lastSyncAt);
+  const ticker = useTicker(1000);
+  const pendingLive = pendingCollectBase + (lastSyncAt ? Math.max(0, (ticker - lastSyncAt) / 1000) * rate : 0);
   // 联盟图腾防御加成（合约 _defAllianceBonus: 每盟友 8 防御 × (1+图腾Lv×0.5%)）
   const currentAlliance = useGameStore(s => s.currentAlliance);
   const totemLv = useGameStore(s => s._allianceTotemLevel);
@@ -134,26 +142,33 @@ export function HUD() {
 
   const systems = useMemo(() => {
     const c = civ!; // hooks 必须在条件 return 之前（React 规则），civ 为 null 时组件提前返回不渲染此处
+    const lowDur = collectorDur.max > 0 && collectorDur.current / collectorDur.max < 0.3;
+    const lowShield = c.maxShieldHP > 0 && c.shieldHP / c.maxShieldHP < 0.2;
     return [
       { key: 'energyCollector' as SystemKey, icon: SYSTEMS.energyCollector.icon, title: SYSTEMS.energyCollector.name, lv: c.energyCollectorLv, color: SYSTEMS.energyCollector.color,
+        warn: lowDur,
         bars: [
           { label: t('hud.collect_rate'), value: rate, rate: fmt(rate, 2) + t('general.per_sec'), color: THEME.accent.green },
-          ...(collectorDur.max > 0 ? [{ label: t('hud.durability'), value: collectorDur.current, max: collectorDur.max, color: THEME.accent.blue }] : []),
+          ...(collectorDur.max > 0 ? [{ label: t('hud.durability'), value: collectorDur.current, max: collectorDur.max, color: lowDur ? THEME.accent.red : THEME.accent.blue }] : []),
         ] },
       { key: 'weapon' as SystemKey, icon: SYSTEMS.weapon.icon, title: SYSTEMS.weapon.name, lv: c.weaponLv, color: SYSTEMS.weapon.color,
+        warn: false,
         bars: [{ label: t('hud.attack_power'), value: atk, color: THEME.accent.red }] },
       { key: 'shield' as SystemKey, icon: SYSTEMS.shield.icon, title: SYSTEMS.shield.name, lv: c.shieldLv, color: SYSTEMS.shield.color,
+        warn: lowShield,
       bars: [
-        { label: t('hud.shield'), value: c.shieldHP, max: c.maxShieldHP, color: THEME.accent.shield },
+        { label: t('hud.shield'), value: c.shieldHP, max: c.maxShieldHP, color: lowShield ? THEME.accent.red : THEME.accent.shield },
         { label: t('hud.defense'), value: defTotal, color: SYSTEMS.shield.color },
       ] },
       { key: 'radar' as SystemKey, icon: SYSTEMS.radar.icon, title: SYSTEMS.radar.name, lv: c.radarLv, color: SYSTEMS.radar.color,
+        warn: false,
         bars: [{ label: t('hud.scan_range'), value: radarVal || c.scanRange, rate: (radarVal || c.scanRange) + t('general.ls'), color: THEME.accent.blue }] },
       { key: 'engine' as SystemKey, icon: SYSTEMS.engine.icon, title: SYSTEMS.engine.name, lv: c.engineLv, color: SYSTEMS.engine.color,
+        warn: false,
         bars: [{ label: t('hud.speed'), value: speedVal, rate: speedVal + t('general.ls_h'), color: SYSTEMS.engine.color }],
       },
     ];
-  }, [civ, rate, atk, defTotal, speedVal, radarVal, t]);
+  }, [civ, rate, atk, defTotal, speedVal, radarVal, collectorDur, t]);
 
   if (!civ) return null;
 
@@ -202,9 +217,9 @@ export function HUD() {
               {civ.maxShieldHP > 0 ? Math.round((civ.shieldHP / civ.maxShieldHP) * 100) + '%' : '0%'}
             </StatValue>
           </StatPill>
-          <StatPill $color="#8844ff">
+          <StatPill $color={THEME.accent.violet}>
             <StatLabel>{t('hud.attack_token_label')}</StatLabel>
-            <StatValue $color="#8844ff">
+            <StatValue $color={THEME.accent.violet}>
               {fmt(tokens.current, 1)}/{tokens.max}
             </StatValue>
             <StatRate>{fmt(tokens.ratePerSec, 4)}{t('general.per_sec')}</StatRate>
@@ -266,7 +281,7 @@ export function HUD() {
             return (
               <StatCard
                 key={s.key} icon={s.icon} title={s.title} level={s.lv}
-                bars={s.bars} warn={false}
+                bars={s.bars} warn={s.warn}
               />
             );
           })}

@@ -29,6 +29,14 @@ export const THEME = {
     gold: '#FFD93D' as const,
     /** 护盾蓝 */
     shield: '#5F9FFF' as const,
+    /** 次级紫（市场日估、令牌） */
+    violet: '#8844ff' as const,
+    /** 薄荷绿（采集率） */
+    mint: '#44ff88' as const,
+    /** 粉（跃迁） */
+    pink: '#ff66aa' as const,
+    /** 橙（全修） */
+    orange: '#ff8844' as const,
   },
 
   /* ─── 按钮 ─── */

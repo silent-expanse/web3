@@ -2,6 +2,7 @@ import { useState } from 'react';
 import styled from 'styled-components';
 import { useGameStore } from '../hooks/useGameStore';
 import { useIsMobile } from '../hooks/useMediaQuery';
+import { useTicker } from '../hooks/useTicker';
 import { useGameActions } from '../hooks/useGameActions';
 import { LoadingOverlay } from './Spinner';
 import { ActionButton } from './ui/ActionButton';
@@ -192,9 +193,13 @@ export function ActionPanel() {
   const [tx, setTx] = useState('');
   const [ty, setTy] = useState('');
   const [tz, setTz] = useState('');
+  const [coordError, setCoordError] = useState('');
   const pending = useGameStore(s => s.pendingEnergy);
   const isMoving = useGameStore(s => s.playerCiv?.isMoving ?? false);
   const loading = useGameStore(s => s.loading);
+  const activeAction = useGameStore(s => s.activeAction);
+  // #22 per-action overlay: 仅显示属于此面板的操作
+  const actionLoading = activeAction !== null && ['collect','claimCombat','distribute','claimSES','move','jump','repairShield','regenShield','repairAll','cancelMove'].includes(activeAction);
   const error = useGameStore(s => s.error);
   const sesBalance = useGameStore(s => s.sesBalance);
   const playerCiv = useGameStore(s => s.playerCiv);
@@ -211,7 +216,8 @@ export function ActionPanel() {
 
   const handleStartMove = () => {
     const x = parseInt(tx), y = parseInt(ty), z = parseInt(tz);
-    if (isNaN(x) || isNaN(y) || isNaN(z)) return;
+    if (isNaN(x) || isNaN(y) || isNaN(z)) { setCoordError(t('action.move_invalid')); return; }
+    setCoordError('');
     startMove(x, y, z);
     setShowMove(false); setTx(''); setTy(''); setTz('');
   };
@@ -219,9 +225,21 @@ export function ActionPanel() {
   const hasShield = playerCiv && playerCiv.shieldHP > 0;
   const shieldFull = playerCiv ? playerCiv.shieldHP >= (playerCiv.maxShieldHP || 0) && playerCiv.maxShieldHP > 0 : false;
 
-  /* ── Pending collectable energy — 直接读链上 getPendingEnergy（轮询刷新），
-   *    与 _collectEnergy 结算完全一致（含耐久上限封顶）。 */
+  /* ── Pending collectable energy — 链上 getPendingEnergy + 本地插值实时增长（#24） ── */
   const pendingCollect = useGameStore(s => s.pendingCollect);
+  const lastSyncAt = useGameStore(s => s.lastSyncAt);
+  const collectorDur = useGameStore(s => s.collectorDurability);
+  const ticker = useTicker(1000);
+  const pendingLive = (() => {
+    if (!pendingCollect) return 0;
+    if (!lastSyncAt || !collectRate) return pendingCollect;
+    const elapsed = Math.max(0, (ticker - lastSyncAt) / 1000);
+    const inc = collectRate * elapsed;
+    const base = pendingCollect + inc;
+    // 若耐久存在且 dur 快耗尽，钳制增长（简化：不超 maxDur-rate 比例，此处仅避免过大值）
+    if (collectorDur.max > 0 && collectorDur.current <= 0) return Math.min(base, pendingCollect);
+    return base;
+  })();
 
   /* ── SES epoch ── */
   const epochDistributed = lastDistributedEpoch >= currentEpoch;
@@ -234,7 +252,7 @@ export function ActionPanel() {
 
   return (
     <Panel $mobile={isMobile}>
-      {loading && <LoadOverlay><LoadingOverlay message={t('general.loading')} color={THEME.accent.green} transparent /></LoadOverlay>}
+      {actionLoading && <LoadOverlay><LoadingOverlay message={t('general.loading')} color={THEME.accent.green} transparent /></LoadOverlay>}
       <SectionTitle><SystemIcon icon="/assets/systems/energy.web.png" /> {t('action.title')}</SectionTitle>
 
       {/* Resource Info Chips */}
@@ -248,15 +266,18 @@ export function ActionPanel() {
             <InfoLabel>{t('action.collect_rate')}</InfoLabel>
             <InfoValue $color={THEME.accent.green}>{fmt(collectRate, 2)}{t('general.per_sec')}</InfoValue>
           </InfoChip>
-          <InfoChip $color="#8844ff">
+          <InfoChip $color={THEME.accent.violet}>
             <InfoLabel>{t('action.daily_est')}</InfoLabel>
-            <InfoValue $color="#8844ff">{dailyEmission > 0 ? fmt(dailyEmission, 0) : '…'} SES</InfoValue>
+            <InfoValue $color={THEME.accent.violet}>{dailyEmission > 0 ? fmt(dailyEmission, 0) : '…'} SES</InfoValue>
           </InfoChip>
           <InfoChip $color={THEME.accent.blue}>
             <InfoLabel>{t('general.epoch')} #{currentEpoch}</InfoLabel>
             <InfoValue $color={THEME.accent.blue}>{epochRemainStr}</InfoValue>
           </InfoChip>
         </Infos>
+      )}
+      {playerCiv && playerCiv.energyCollectorLv <= 2 && (
+        <div style={{ color: THEME.alpha(THEME.accent.green, 0.85), fontSize: '0.7rem', fontFamily: "'Courier New', monospace", background: THEME.alpha(THEME.accent.green, 0.08), border: `1px dashed ${THEME.alpha(THEME.accent.green, 0.25)}`, borderRadius: 6, padding: '6px 10px', marginBottom: 10 }}>{t('general.tooltip_newbie')}</div>
       )}
 
       {/* Error Banner */}
@@ -273,7 +294,7 @@ export function ActionPanel() {
         <ActionCard $color={THEME.accent.green} $disabled={loading} onClick={() => !loading && collectEnergy()}>
           <ActionIcon><SystemIcon icon="/assets/systems/energy.web.png" /></ActionIcon>
           <ActionLabel $color={THEME.accent.green}>{t('action.collect')}</ActionLabel>
-          {pendingCollect > 0 && <ActionBadge $color={THEME.accent.green}>~{fmt(pendingCollect)}</ActionBadge>}
+          {pendingLive > 0 && <ActionBadge $color={THEME.accent.green}>~{fmt(Math.floor(pendingLive))}</ActionBadge>}
         </ActionCard>
       </Grid>
 
@@ -301,11 +322,11 @@ export function ActionPanel() {
 
         {/* Daily SES — Claim */}
         {epochDistributed && (
-          <ActionCard $color={epochClaimed ? THEME.text.secondary : '#8844ff'}
+          <ActionCard $color={epochClaimed ? THEME.text.secondary : THEME.accent.violet}
             $disabled={loading || epochClaimed}
             onClick={() => !loading && !epochClaimed && claimDailySES()}>
             <ActionIcon><SystemIcon icon="/assets/systems/claim.web.png" /></ActionIcon>
-            <ActionLabel $color={epochClaimed ? THEME.text.secondary : '#8844ff'}>
+            <ActionLabel $color={epochClaimed ? THEME.text.secondary : THEME.accent.violet}>
               {epochClaimed ? t('action.claimed_today') : t('action.claim_ses')}
             </ActionLabel>
             <ActionBadge $color={epochClaimed ? THEME.text.secondary : THEME.accent.green}>
@@ -331,15 +352,16 @@ export function ActionPanel() {
               </div>
             )}
             <InputRow>
-              <Input $mobile={isMobile} placeholder="X" value={tx} onChange={e => setTx(e.target.value)} disabled={loading} />
-              <Input $mobile={isMobile} placeholder="Y" value={ty} onChange={e => setTy(e.target.value)} disabled={loading} />
-              <Input $mobile={isMobile} placeholder="Z" value={tz} onChange={e => setTz(e.target.value)} disabled={loading} />
+              <Input $mobile={isMobile} placeholder="X" value={tx} onChange={e => setTx(e.target.value)} onFocus={e => isMobile && setTimeout(() => (e.target as HTMLInputElement).scrollIntoView({ behavior: 'smooth', block: 'center' }), 150)} disabled={loading} />
+              <Input $mobile={isMobile} placeholder="Y" value={ty} onChange={e => setTy(e.target.value)} onFocus={e => isMobile && setTimeout(() => (e.target as HTMLInputElement).scrollIntoView({ behavior: 'smooth', block: 'center' }), 150)} disabled={loading} />
+              <Input $mobile={isMobile} placeholder="Z" value={tz} onChange={e => setTz(e.target.value)} onFocus={e => isMobile && setTimeout(() => (e.target as HTMLInputElement).scrollIntoView({ behavior: 'smooth', block: 'center' }), 150)} disabled={loading} />
             </InputRow>
+            {coordError && <div style={{ color: THEME.accent.red, fontSize: '0.68rem', fontFamily: "'Courier New', monospace", marginTop: 4 }}>{coordError}</div>}
             <InputRow>
               <ActionButton variant="primary" disabled={loading} onClick={handleStartMove} style={{ flex: 1 }}>
                 {t('action.move_confirm')}
               </ActionButton>
-              <ActionButton variant="ghost" onClick={() => setShowMove(false)}>{t('action.move_cancel')}</ActionButton>
+              <ActionButton variant="ghost" onClick={() => { setShowMove(false); setCoordError(''); }}>{t('action.move_cancel')}</ActionButton>
             </InputRow>
           </div>
         ) : (
@@ -348,9 +370,9 @@ export function ActionPanel() {
             <ActionLabel $color={THEME.accent.blue}>{t('action.move')}</ActionLabel>
           </ActionCard>
         )}
-        <ActionCard $color="#ff66aa" $disabled={loading} onClick={() => !loading && setJumpConfirm(true)}>
+        <ActionCard $color={THEME.accent.pink} $disabled={loading} onClick={() => !loading && setJumpConfirm(true)}>
           <ActionIcon><SystemIcon icon="/assets/systems/jump.web.png" /></ActionIcon>
-          <ActionLabel $color="#ff66aa">{t('action.jump')}</ActionLabel>
+          <ActionLabel $color={THEME.accent.pink}>{t('action.jump')}</ActionLabel>
         </ActionCard>
         {/* Cancel move — 仅在移动中可取消 */}
         <ActionCard $color={THEME.accent.red} $disabled={loading || showMove || !isMoving} onClick={() => !loading && !showMove && isMoving && cancelMove()}>
@@ -376,9 +398,9 @@ export function ActionPanel() {
           <ActionIcon><SystemIcon icon="/assets/systems/regen.web.png" /></ActionIcon>
           <ActionLabel $color={THEME.accent.green}>{t('action.regen_shield')}</ActionLabel>
         </ActionCard>
-        <ActionCard $color="#ff8844" $disabled={loading} onClick={() => !loading && repairAll()}>
+        <ActionCard $color={THEME.accent.orange} $disabled={loading} onClick={() => !loading && repairAll()}>
           <ActionIcon><SystemIcon icon="/assets/systems/collector.web.png" /></ActionIcon>
-          <ActionLabel $color="#ff8844">{t('action.repair_all')}</ActionLabel>
+          <ActionLabel $color={THEME.accent.orange}>{t('action.repair_all')}</ActionLabel>
         </ActionCard>
       </Grid>
 

@@ -246,6 +246,8 @@ export function UpgradeRecommendation() {
   const { t } = useI18n();
   const civ = useGameStore(s => s.playerCiv);
   const loading = useGameStore(s => s.loading);
+  const activeAction = useGameStore(s => s.activeAction);
+  const isUpgradeLoading = activeAction === 'upgrade';
   const error = useGameStore(s => s.error);
   const sesNum = parseFloat(useGameStore(s => s.sesBalance));
   const address = useGameStore(s => s.address);
@@ -323,7 +325,7 @@ export function UpgradeRecommendation() {
       <SectionTitle><SystemIcon icon="/assets/systems/shield.web.png" /> {t('nav.tech')}</SectionTitle>
 
       {/* Loading overlay */}
-      {loading && <LoadOverlay><LoadingOverlay message={t('upgrade.btn')} color={THEME.accent.green} transparent /></LoadOverlay>}
+      {isUpgradeLoading && <LoadOverlay><LoadingOverlay message={t('upgrade.btn')} color={THEME.accent.green} transparent /></LoadOverlay>}
 
       {/* Error banner */}
       {error && (
@@ -350,8 +352,14 @@ export function UpgradeRecommendation() {
         const contractCost = realCosts[r.sysName];
         const costSES = contractCost.ses;
         const costEnergy = contractCost.energy;
-        const affordable = sesNum >= costSES;
+        const energyHave = civ.energy ?? 0;
+        const affordable = sesNum >= costSES && (costEnergy === 0 || energyHave >= costEnergy);
         const pct = sesNum > 0 ? (sesNum / costSES) * 100 : 0;
+        const blockReason = sesNum < costSES
+          ? t('upgrade.insufficient')
+          : costEnergy > 0 && energyHave < costEnergy
+            ? t('toast.energy_insufficient_short')
+            : null;
 
         return (
           <Card key={r.key} $color={r.color} $highlight={i === 0} $affordable={affordable}>
@@ -395,11 +403,17 @@ export function UpgradeRecommendation() {
                 {costLoading && <LoadingCost>⟳</LoadingCost>}
                 <ActionButton variant="primary" disabled={loading || !affordable}
                   onClick={() => setConfirmSystem(r.key)}
-                  title={!affordable ? t('upgrade.insufficient') : undefined}>
+                  title={blockReason ?? undefined}>
                   {t('upgrade.btn')}
                 </ActionButton>
               </div>
             </CostRow>
+            {!affordable && blockReason && (
+              <div style={{ color: THEME.accent.red, fontSize: '0.68rem', fontFamily: "'Courier New', monospace", marginTop: 6, textAlign: 'center' }}>{blockReason}</div>
+            )}
+            {affordable && costSES > 0 && (
+              <div style={{ color: THEME.text.secondary, fontSize: '0.62rem', fontFamily: "'Courier New', monospace", marginTop: 4, opacity: 0.7, textAlign: 'center' }}>{t('general.approve_hint')}</div>
+            )}
           </Card>
         );
       })}
@@ -413,7 +427,7 @@ export function UpgradeRecommendation() {
         onCancel={() => setConfirmSystem(null)}
         confirmVariant="primary"
         confirmLabel={t('hud.confirm_upgrade')}
-        loading={loading}
+        loading={isUpgradeLoading}
       >
         {selectedForUpgrade && (
           <>

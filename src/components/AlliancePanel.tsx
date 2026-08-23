@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import styled from 'styled-components';
 import { useGameStore } from '../hooks/useGameStore';
 import { useContract } from '../hooks/useContract';
@@ -6,6 +6,7 @@ import { useGameActions } from '../hooks/useGameActions';
 import { LoadingOverlay } from './Spinner';
 import { ActionButton } from './ui/ActionButton';
 import { SystemIcon } from './ui/SystemIcon';
+import { TxConfirm } from './ui/TxConfirm';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { useI18n } from '../hooks/useI18n';
 import { THEME } from '../theme';
@@ -81,8 +82,8 @@ const RoleTag = styled.span<{ $leader?: boolean }>`
 `;
 
 const MiniBtn = styled.button<{ $danger?: boolean }>`
-  padding: 2px 8px;
-  font-size: 0.65rem;
+  padding: 4px 10px;
+  font-size: 0.68rem;
   font-family: 'Courier New', monospace;
   border-radius: 4px;
   cursor: pointer;
@@ -91,10 +92,27 @@ const MiniBtn = styled.button<{ $danger?: boolean }>`
   color: ${({ $danger }) => ($danger ? THEME.accent.red : THEME.text.secondary)};
   &:hover:not(:disabled) { opacity: 0.8; }
   &:disabled { opacity: 0.35; cursor: not-allowed; }
+  min-height: 32px;
+  @media (max-width: 767px) { min-height: 36px; }
 `;
 
 const AllianceListContainer = styled.div`
-  max-height: 200px; overflow-y: auto; border: 1px solid ${THEME.alpha(THEME.border, 0.4)}; border-radius: 6px; padding: 4px;
+  max-height: 240px; overflow-y: auto; border: 1px solid ${THEME.alpha(THEME.border, 0.4)}; border-radius: 6px; padding: 4px;
+`;
+
+const PresetRow = styled.div`
+  display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap;
+`;
+const PresetBtn = styled.button`
+  padding: 3px 8px;
+  font-size: 0.68rem;
+  font-family: 'Courier New', monospace;
+  border-radius: 4px;
+  cursor: pointer;
+  background: ${THEME.alpha(THEME.accent.green, 0.08)};
+  border: 1px solid ${THEME.alpha(THEME.accent.green, 0.25)};
+  color: ${THEME.accent.green};
+  &:hover { background: ${THEME.alpha(THEME.accent.green, 0.15)}; }
 `;
 
 interface AllianceInfo { id: string; name: string; leader: string; level: number; memberCount: number; }
@@ -106,6 +124,8 @@ export function AlliancePanel() {
   const address = useGameStore(s => s.address);
   const alliance = useGameStore(s => s.currentAlliance);
   const loading = useGameStore(s => s.loading);
+  const activeAction = useGameStore(s => s.activeAction);
+  const allianceLoading = activeAction !== null && activeAction.startsWith('alliance.');
   const members = useGameStore(s => s._allianceMembers);
   const totemLevel = useGameStore(s => s._allianceTotemLevel);
   const totemEnergy = useGameStore(s => s._allianceTotemEnergy);
@@ -113,12 +133,20 @@ export function AlliancePanel() {
   const isLeader = useGameStore(s => s._allianceIsLeader);
   const allianceLeader = useGameStore(s => s._allianceLeader);
   const pendingRefund = useGameStore(s => s._alliancePendingRefund);
+  const playerEnergy = useGameStore(s => s.playerCiv?.energy ?? 0);
   const { createAlliance, joinAlliance, leaveAlliance, kickMember, transferLeadership, disbandAlliance, claimRefund, donateToTotem, upgradeTotem } = useGameActions();
 
   const [tab, setTab] = useState<'mine' | 'list'>('mine');
   const [allianceName, setAllianceName] = useState('');
   const [donateAmt, setDonateAmt] = useState('');
   const [alliances, setAlliances] = useState<AllianceInfo[]>([]);
+  const [showAllMembers, setShowAllMembers] = useState(false);
+  const [allianceQuery, setAllianceQuery] = useState('');
+  const [allianceSort, setAllianceSort] = useState<'members' | 'level'>('members');
+  const [kickConfirm, setKickConfirm] = useState<{ id: string; member: string } | null>(null);
+  const [disbandInput, setDisbandInput] = useState('');
+  const [disbandOpen, setDisbandOpen] = useState(false);
+  const [leaveOpen, setLeaveOpen] = useState(false);
 
   // 仅「列表」标签需要手动拉取所有联盟
   const fetchAlliances = useCallback(async () => {
@@ -126,11 +154,11 @@ export function AlliancePanel() {
     try {
       const ids: string[] = await ct.alliance.getAllianceList();
       const infos: AllianceInfo[] = [];
-      for (const id of ids.slice(0, 20)) {
+      for (const id of ids.slice(0, 30)) {
         try {
           const raw = await ct.alliance.alliances(id);
-          infos.push({ id, name: String(raw.name ?? raw[0] ?? '?'), leader: String(raw.leader ?? raw[1] ?? ''),
-            level: Number(raw.level ?? raw[2] ?? 1), memberCount: Number(raw.memberCount ?? raw[3] ?? 0) });
+          infos.push({ id, name: String((raw as Record<string, unknown>).name ?? (raw as unknown as unknown[])[0] ?? '?'), leader: String((raw as Record<string, unknown>).leader ?? (raw as unknown as unknown[])[1] ?? ''),
+            level: Number((raw as Record<string, unknown>).level ?? (raw as unknown as unknown[])[2] ?? 1), memberCount: Number((raw as Record<string, unknown>).memberCount ?? (raw as unknown as unknown[])[3] ?? 0) });
         } catch { /* skip */ }
       }
       setAlliances(infos);
@@ -151,18 +179,42 @@ export function AlliancePanel() {
     await joinAlliance(id);
     setTab('mine');
   };
-  const handleLeave = async (allianceId: string) => {
-    await leaveAlliance(allianceId);
+  const handleLeave = async () => {
+    if (!alliance) return;
+    await leaveAlliance(alliance.id);
+    setLeaveOpen(false);
     setTab('list');
   };
-  const handleDisband = async (allianceId: string) => {
-    await disbandAlliance(allianceId);
+  const handleDisband = async () => {
+    if (!alliance) return;
+    if (disbandInput !== alliance.name) return;
+    await disbandAlliance(alliance.id);
+    setDisbandOpen(false);
+    setDisbandInput('');
     setTab('list');
   };
 
+  const filteredAlliances = useMemo(() => {
+    const q = allianceQuery.trim().toLowerCase();
+    let list = alliances;
+    if (q) list = list.filter(a => a.name.toLowerCase().includes(q));
+    return [...list].sort((a, b) => allianceSort === 'members' ? b.memberCount - a.memberCount : b.level - a.level);
+  }, [alliances, allianceQuery, allianceSort]);
+
+  const visibleMembers = showAllMembers ? members : members.slice(0, 10);
+  const presets = useMemo(() => {
+    const e = playerEnergy;
+    return [
+      { label: '1K', value: Math.min(1000, e) },
+      { label: '5K', value: Math.min(5000, e) },
+      { label: '25%', value: Math.floor(e * 0.25) },
+      { label: 'MAX', value: e },
+    ];
+  }, [playerEnergy]);
+
   return (
     <Panel $mobile={isMobile}>
-      {loading && <LoadOverlay><LoadingOverlay message={t('general.loading')} color={THEME.accent.gold} transparent /></LoadOverlay>}
+      {allianceLoading && <LoadOverlay><LoadingOverlay message={t('general.loading')} color={THEME.accent.gold} transparent /></LoadOverlay>}
       <SectionTitle><SystemIcon icon="/assets/systems/totem.web.png" /> {t('alliance.title')}</SectionTitle>
       <TabRow>
         <Tab $active={tab === 'mine'} onClick={() => setTab('mine')}>{t('alliance.mine')}</Tab>
@@ -178,7 +230,7 @@ export function AlliancePanel() {
                 <AllianceMeta>Lv.{alliance.level} · {alliance.memberCount}{t('alliance.people')}</AllianceMeta>
               </AllianceCard>
               <div style={{ marginBottom: 6 }}>
-                {members.map((m, i) => {
+                {visibleMembers.map((m, i) => {
                   const isSelf = m === address;
                   const isThisLeader = m.toLowerCase() === allianceLeader.toLowerCase();
                   return (
@@ -195,7 +247,7 @@ export function AlliancePanel() {
                           <MiniBtn onClick={() => { if (window.confirm(t('alliance.transfer_confirm'))) transferLeadership(alliance.id, m); }} disabled={loading}>
                             {t('alliance.transfer')}
                           </MiniBtn>
-                          <MiniBtn $danger onClick={() => kickMember(alliance.id, m)} disabled={loading}>
+                          <MiniBtn $danger onClick={() => setKickConfirm({ id: alliance.id, member: m })} disabled={loading}>
                             {t('alliance.kick')}
                           </MiniBtn>
                         </span>
@@ -203,6 +255,13 @@ export function AlliancePanel() {
                     </Row>
                   );
                 })}
+                {members.length > 10 && (
+                  <Row style={{ justifyContent: 'center' }}>
+                    <MiniBtn onClick={() => setShowAllMembers(v => !v)}>
+                      {showAllMembers ? t('alliance.show_less') : t('alliance.view_all', { n: members.length })}
+                    </MiniBtn>
+                  </Row>
+                )}
               </div>
               <Row>
                 <span><SystemIcon icon="/assets/systems/totem.web.png" /> {t('alliance.totem')} Lv.{totemLevel}</span>
@@ -231,12 +290,18 @@ export function AlliancePanel() {
               {isLeader && <Row><span style={{ color: THEME.accent.gold }}>{t('alliance.leader')}</span></Row>}
               <Row style={{ marginTop: 6, gap: 6 }}>
                 <Input placeholder={t('alliance.donate')} value={donateAmt}
-                  onChange={e => setDonateAmt(e.target.value)} style={{ flex: 1 }} />
+                  onChange={e => setDonateAmt(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))} style={{ flex: 1 }} inputMode="numeric" />
                 <ActionButton variant="primary" onClick={() => { const amt = Number(donateAmt); if (amt > 0) { donateToTotem(alliance.id, amt); setDonateAmt(''); } }}
                   disabled={loading || !(Number(donateAmt) > 0)}>
                   {t('alliance.donate')}
                 </ActionButton>
               </Row>
+              <PresetRow>
+                <span style={{ color: THEME.text.secondary, fontSize: '0.68rem', fontFamily: "'Courier New', monospace", alignSelf: 'center' }}>{t('alliance.donate_presets')}</span>
+                {presets.map(p => (
+                  <PresetBtn key={p.label} onClick={() => setDonateAmt(String(p.value))} disabled={loading || p.value <= 0}>{p.label}</PresetBtn>
+                ))}
+              </PresetRow>
               {/* 盟主专属操作 */}
               {isLeader && (
                 <>
@@ -250,7 +315,7 @@ export function AlliancePanel() {
                       {t('alliance.totem_need_more')}（{fmt(totemEnergy)} / {fmt(totemUpgradeCostVal)}）
                     </div>
                   )}
-                  <ActionButton variant="danger" onClick={() => alliance && handleDisband(alliance.id)} disabled={loading}
+                  <ActionButton variant="danger" onClick={() => { setDisbandInput(''); setDisbandOpen(true); }} disabled={loading}
                     style={{ marginTop: 4, width: '100%' }}>
                     {t('alliance.disband')}
                   </ActionButton>
@@ -258,10 +323,15 @@ export function AlliancePanel() {
               )}
               {/* 成员专属操作：退出（人数>1 时允许） */}
               {!isLeader && alliance.memberCount > 1 && (
-                <ActionButton variant="ghost" onClick={() => alliance && handleLeave(alliance.id)} disabled={loading}
-                  style={{ marginTop: 6, width: '100%' }}>
-                  {t('alliance.leave')}
-                </ActionButton>
+                <>
+                  <ActionButton variant="ghost" onClick={() => setLeaveOpen(true)} disabled={loading}
+                    style={{ marginTop: 6, width: '100%' }}>
+                    {t('alliance.leave')}
+                  </ActionButton>
+                  <div style={{ color: THEME.text.secondary, fontSize: '0.68rem', fontFamily: "'Courier New', monospace", marginTop: 4, textAlign: 'center' }}>
+                    {t('alliance.leave_note', { sec: 86400 })}
+                  </div>
+                </>
               )}
               {/* 退款：有退款才显示 */}
               {pendingRefund > 0 && (
@@ -269,9 +339,53 @@ export function AlliancePanel() {
                   {t('alliance.refund')} ({fmt(pendingRefund)} SES)
                 </ActionButton>
               )}
+
+              {/* #38踢人确认 */}
+              <TxConfirm
+                open={!!kickConfirm}
+                title={t('alliance.kick')}
+                onConfirm={() => { if (kickConfirm) { kickMember(kickConfirm.id, kickConfirm.member); setKickConfirm(null); } }}
+                onCancel={() => setKickConfirm(null)}
+                confirmVariant="danger"
+                confirmLabel={t('alliance.kick')}
+                loading={loading}
+              >
+                {kickConfirm && t('alliance.kick_confirm', { name: kickConfirm.member.slice(0, 6) + '...' })}
+              </TxConfirm>
+
+              {/* #71 解散强确认 */}
+              <TxConfirm
+                open={disbandOpen}
+                title={t('alliance.disband')}
+                onConfirm={handleDisband}
+                onCancel={() => { setDisbandOpen(false); setDisbandInput(''); }}
+                confirmVariant="danger"
+                confirmLabel={t('alliance.disband')}
+                loading={loading}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <span>{t('alliance.disband_confirm_ph')}</span>
+                  <Input placeholder={alliance.name} value={disbandInput} onChange={e => setDisbandInput(e.target.value)} />
+                  {disbandInput !== alliance.name && <span style={{ color: THEME.accent.red, fontSize: '0.68rem' }}>{t('alliance.disband_need_input')}</span>}
+                </div>
+              </TxConfirm>
+
+              {/* #72 退出确认 */}
+              <TxConfirm
+                open={leaveOpen}
+                title={t('alliance.leave')}
+                onConfirm={handleLeave}
+                onCancel={() => setLeaveOpen(false)}
+                confirmVariant="danger"
+                confirmLabel={t('alliance.leave')}
+                loading={loading}
+              >
+                {t('alliance.leave_note', { sec: 86400 })}
+              </TxConfirm>
             </>
           ) : (
             <div style={{ textAlign: 'center', padding: 12, color: THEME.text.secondary }}>
+              <div style={{ color: THEME.text.secondary, fontSize: '0.7rem', marginBottom: 6 }}>{t('alliance.join_note')}</div>
               <Input placeholder={t('alliance.name')} value={allianceName}
                 onChange={e => setAllianceName(e.target.value)} style={{ marginBottom: 8 }}
                 onKeyDown={e => e.key === 'Enter' && handleCreate()} />
@@ -284,21 +398,29 @@ export function AlliancePanel() {
       )}
 
       {tab === 'list' && (
-        <AllianceListContainer>
-          {alliances.length === 0 ? (
-            <Row style={{ textAlign: 'center', opacity: 0.6 }}>{t('alliance.no_alliance')}</Row>
-          ) : (
-            alliances.map(a => (
-              <AllianceCard key={a.id}>
-                <div>
-                  <AllianceName>{a.name}</AllianceName>
-                  <AllianceMeta>Lv.{a.level} · {a.memberCount}{t('alliance.people')}</AllianceMeta>
-                </div>
-                <ActionButton variant="ghost" onClick={() => handleJoin(a.id)} disabled={loading}>{t('alliance.join')}</ActionButton>
-              </AllianceCard>
-            ))
-          )}
-        </AllianceListContainer>
+        <>
+          <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+            <Input placeholder={t('alliance.search')} value={allianceQuery} onChange={e => setAllianceQuery(e.target.value)} style={{ flex: 1 }} />
+            <Tab $active={allianceSort === 'members'} onClick={() => setAllianceSort('members')}>人数</Tab>
+            <Tab $active={allianceSort === 'level'} onClick={() => setAllianceSort('level')}>等级</Tab>
+          </div>
+          <div style={{ color: THEME.text.secondary, fontSize: '0.68rem', marginBottom: 4 }}>{t('alliance.join_note')}</div>
+          <AllianceListContainer>
+            {filteredAlliances.length === 0 ? (
+              <Row style={{ justifyContent: 'center', opacity: 0.6, padding: 12 }}>{t('alliance.no_alliance')}</Row>
+            ) : (
+              filteredAlliances.map(a => (
+                <AllianceCard key={a.id}>
+                  <div style={{ minWidth: 0 }}>
+                    <AllianceName>{a.name}</AllianceName>
+                    <AllianceMeta>Lv.{a.level} · {a.memberCount}{t('alliance.people')}</AllianceMeta>
+                  </div>
+                  <ActionButton variant="ghost" onClick={() => handleJoin(a.id)} disabled={loading}>{t('alliance.join')}</ActionButton>
+                </AllianceCard>
+              ))
+            )}
+          </AllianceListContainer>
+        </>
       )}
     </Panel>
   );

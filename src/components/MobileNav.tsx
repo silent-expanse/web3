@@ -74,7 +74,9 @@ const TAB_COLORS: Record<TabId, string> = {
 export function MobileNav({ activeTab, onTabChange }: Props) {
   const { t } = useI18n();
   const battleLog = useGameStore(s => s.battleLog);
-  const alliance = useGameStore(s => s.currentAlliance);
+  const seenCnt = useGameStore(s => s.seenBattleCount);
+  const pendingRefund = useGameStore(s => s._alliancePendingRefund);
+  const pendingEnergy = useGameStore(s => s.pendingEnergy);
 
   const tabIds: TabId[] = ['hud', 'actions', 'combat', 'market', 'alliance', 'links'];
 
@@ -91,16 +93,22 @@ export function MobileNav({ activeTab, onTabChange }: Props) {
     <Nav>
       {tabIds.map(id => {
         const isActive = activeTab === id;
+        // #16 未读事件：combat = 有未读战报；alliance = 有退款/战斗能量待领；market = 有公共挂单可买
         const hasBadge =
-          (id === 'combat' && battleLog.length > 0) ||
-          (id === 'alliance' && alliance !== null);
+          (id === 'combat' && battleLog.length > seenCnt) ||
+          (id === 'alliance' && pendingRefund > 0) ||
+          (id === 'actions' && pendingEnergy > 0);
 
         return (
           <TabButton
             key={id}
             $active={isActive}
             $color={TAB_COLORS[id]}
-            onClick={() => onTabChange(isActive ? null : id)}
+            onClick={() => {
+              // #55/#16 点击 combat 时标记已读
+              if (id === 'combat' && !isActive) useGameStore.getState().markBattlesSeen();
+              onTabChange(isActive ? null : id);
+            }}
             aria-label={tabLabels[id]}
           >
             <Icon><SystemIcon icon={TAB_ICONS[id]} /></Icon>

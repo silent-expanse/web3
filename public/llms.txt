@@ -54,10 +54,16 @@
 
 ## 合约地址 (BSC 主网)
 
-- Game: 0xa5959273f87c7a555193fa2b9e81e0526cd357aa
-- SES Token: 0x0c01d8500b8b819eb4459233d9bcc2e7c6a27109
-- Alliance: 0x061b60973cfdd0ce4fbb425cfd25d3f3f8bc9716
-- EnergyMarket: 0xe21c780c163fd65e8962cfbaea143d825cc7b8e8
+- Game: 0x58c2400527813f78fc7ed498dd4ec66dc7787e73
+- SES Token: 0x1491e226292cf61aba5717828540c0f2518301c6
+- DailyMinter: 0x52ca63564e15ed70d012a70ea14d9d2e3701be1d
+- Alliance: 0x424923b65b9a224a3a96222a6e54b250887ce119
+- EnergyMarket: 0x2dc9fff0edf2f4e1495eb8bb9b7ca117c635bf77
+- AgentRegistry: 0x05f85522651ea88d788f61ad0e2d410054c9e219
+
+## 链上数据
+
+- [Dune Dashboard](https://dune.com/cryptodigdeep/strifelabs): 11 项实时指标（日活/新文明/战斗/转账/入场费/领取/持仓/交易/价格），数据源 `bnb.logs` + V2 Swap
 
 ## 常见问答
 

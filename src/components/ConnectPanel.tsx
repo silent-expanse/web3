@@ -255,10 +255,15 @@ export function ConnectPanel() {
   const [error, setError] = useState<string | null>(null);
   const [fee, setFee] = useState('0.01');
   const [checkingCiv, setCheckingCiv] = useState(false);
+  const [feeProgress, setFeeProgress] = useState(0);
+  const [bnbPrice, setBnbPrice] = useState<number | null>(null);
 
   const { t, toggleLang } = useI18n();
   const isMobile = useIsMobile();
   const loading = useGameStore(s => s.loading);
+  // #02 实时字符计数与校验（需在 t 之后）
+  const nameLen = name.length;
+  const nameError = nameLen > 32 ? t('connect.name_too_long') : '';
 
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
   const ct = useContract();
@@ -267,6 +272,15 @@ export function ConnectPanel() {
   const shortAddr = wagmiAddress
     ? wagmiAddress.slice(0, 4) + '...' + wagmiAddress.slice(-4)
     : '';
+
+  /* ── ?ref= 参数自动填充（#04） ── */
+  useEffect(() => {
+    try {
+      const url = new URL(window.location.href);
+      const ref = url.searchParams.get('ref') || url.searchParams.get('referrer') || url.searchParams.get('invite');
+      if (ref && isAddress(ref) && !referrer) setReferrer(ref);
+    } catch { /* ignore */ }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── 钱包/账户切换检测 ── */
   const prevConnected = useRef(false);
@@ -327,9 +341,29 @@ export function ConnectPanel() {
 
   /* ── 入场费 ── */
   useEffect(() => {
-    fetchEntryFee().then(setFee).catch(() => {});
+  // #03 BNB → USD 折算（Binance 公共接口，失败静默）
+  useEffect(() => {
+    let cancelled = false;
+    const fetchPrice = async () => {
+      try {
+        const r = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BNBUSDT', { cache: 'no-store' });
+        const j = await r.json() as { price?: string };
+        if (!cancelled && j.price) setBnbPrice(parseFloat(j.price));
+      } catch { /* 静默 */ }
+    };
+    fetchPrice();
+    const id = setInterval(fetchPrice, 60_000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
+
+    const calcProgress = (feeStr: string) => {
+      const f = parseFloat(feeStr);
+      if (!Number.isFinite(f)) return 0;
+      return Math.min(100, Math.max(0, Math.round(((f - 0.01) / 0.04) * 100)));
+    };
+    fetchEntryFee().then(v => { setFee(v); setFeeProgress(calcProgress(v)); }).catch(() => {});
     const interval = setInterval(() => {
-      fetchEntryFee().then(setFee).catch(() => {});
+      fetchEntryFee().then(v => { setFee(v); setFeeProgress(calcProgress(v)); }).catch(() => {});
     }, 30_000);
     return () => clearInterval(interval);
   }, [fetchEntryFee]);
@@ -373,8 +407,12 @@ export function ConnectPanel() {
       <Title $mobile={isMobile}>{t('connect.title')}</Title>
       <Subtitle $mobile={isMobile}>{t('connect.subtitle')}</Subtitle>
       <FeeDisplay $mobile={isMobile}>
-        {t('connect.fee_label')}: <strong>{fee} BNB</strong>
+        {t('connect.fee_label')}: <strong>{fee} BNB</strong>{bnbPrice != null && ` ≈ $${(parseFloat(fee) * bnbPrice).toFixed(2)}`}
       </FeeDisplay>
+      <div style={{ width: '100%', maxWidth: 360, height: 4, background: THEME.alpha(THEME.accent.gold, 0.15), borderRadius: 2, overflow: 'hidden', marginBottom: 8 }}>
+        <div style={{ width: `${feeProgress}%`, height: '100%', background: THEME.accent.gold, transition: 'width 0.5s' }} />
+      </div>
+      <div style={{ color: THEME.alpha(THEME.accent.gold, 0.7), fontSize: '0.68rem', fontFamily: "'Courier New', monospace", marginBottom: 12 }}>{t('connect.fee_progress', { pct: feeProgress })}</div>
 
       {/* ── 连接钱包 ── */}
       {uiDisconnected && (
@@ -400,13 +438,24 @@ export function ConnectPanel() {
             <ConnectButton />
           </RainbowWrapper>
           {shortAddr && <WalletBadge>🔗 {shortAddr}</WalletBadge>}
-          <Input $mobile={isMobile} placeholder={t('connect.civ_name')} value={name}
-            onChange={e => setName(e.target.value)} maxLength={32}
-            onKeyDown={e => e.key === 'Enter' && handleCreate()} autoFocus />
+          <div style={{ width: '100%', maxWidth: 360 }}>
+            <Input $mobile={isMobile} placeholder={t('connect.civ_name')} value={name}
+              onChange={e => setName(e.target.value)} maxLength={32}
+              onKeyDown={e => e.key === 'Enter' && handleCreate()} autoFocus
+              style={nameError ? { borderColor: THEME.accent.red } : undefined} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+              <span style={{ color: THEME.text.secondary, fontSize: '0.68rem', fontFamily: "'Courier New', monospace" }}>{t('connect.name_hint')}</span>
+              <span style={{ color: nameLen > 28 ? THEME.accent.gold : THEME.text.secondary, fontSize: '0.68rem', fontFamily: "'Courier New', monospace" }}>{t('connect.char_count', { cur: nameLen })}</span>
+            </div>
+            {nameError && <div style={{ color: THEME.accent.red, fontSize: '0.7rem', marginTop: 4 }}>{nameError}</div>}
+          </div>
           <SmallInput $mobile={isMobile} placeholder={t('connect.referrer')} value={referrer}
             onChange={e => setReferrer(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleCreate()} />
+          {referrer && isAddress(referrer) && new URLSearchParams(window.location.search).get('ref') === referrer && (
+            <span style={{ color: THEME.accent.green, fontSize: '0.68rem', fontFamily: "'Courier New', monospace" }}>{t('connect.referrer_auto')}</span>
+          )}
           <FeeDisplay $mobile={isMobile}>{t('connect.referral_bonus')}</FeeDisplay>
-          <ActionButton $mobile={isMobile} onClick={handleCreate} disabled={loading}>
+          <ActionButton $mobile={isMobile} onClick={handleCreate} disabled={loading || !!nameError || !name.trim()}>
             {t('connect.pay', { fee })}
           </ActionButton>
         </Form>

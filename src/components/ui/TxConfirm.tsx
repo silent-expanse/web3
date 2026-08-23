@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { THEME } from '../../theme';
 import { ActionButton } from './ActionButton';
@@ -99,11 +99,37 @@ export function TxConfirm({
   confirmLabel = '确认', cancelLabel = '取消',
   confirmVariant = 'primary',
 }: TxConfirmProps) {
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  // #90: Esc 关闭 + 禁止背景滚动 + 焦点管理
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel();
+      if (e.key === 'Tab' && overlayRef.current) {
+        const els = overlayRef.current.querySelectorAll<HTMLElement>('button:not([disabled]), [href]');
+        if (els.length === 0) return;
+        const first = els[0], last = els[els.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    // 自动聚焦确认按钮（最后一个 button）
+    setTimeout(() => {
+      const btns = overlayRef.current?.querySelectorAll<HTMLButtonElement>('button');
+      btns?.[btns.length - 1]?.focus();
+    }, 30);
+    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
+  }, [open, onCancel]);
+
   return (
-    <Overlay $open={open} onClick={onCancel}>
+    <Overlay $open={open} ref={overlayRef} role="dialog" aria-modal="true" aria-label={title} aria-busy={loading ? 'true' : undefined} onClick={onCancel}>
       <Modal onClick={(e: React.MouseEvent) => e.stopPropagation()}>
         <Header>
-          <Title>{icon && <SystemIcon icon={icon} />} {title}</Title>
+          <Title id="txconfirm-title">{icon && <SystemIcon icon={icon} />} {title}</Title>
         </Header>
         <Body>{children}</Body>
         {gasEstimate && <Gas>⛽ Gas: ~{gasEstimate}</Gas>}
@@ -111,7 +137,7 @@ export function TxConfirm({
           <ActionButton variant="ghost" onClick={onCancel} disabled={loading}>
             {cancelLabel}
           </ActionButton>
-          <ActionButton variant={confirmVariant} onClick={onConfirm} loading={loading}>
+          <ActionButton variant={confirmVariant} onClick={onConfirm} loading={loading} aria-label={confirmLabel}>
             {confirmLabel}
           </ActionButton>
         </Footer>
