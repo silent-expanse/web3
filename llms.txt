@@ -1,0 +1,78 @@
+# Silent Expanse: Strife — 寂灭星河：纷争
+
+> 完全链上 3D MMO SLG，部署于 BNB Chain。受《三体》黑暗森林启发的无限宇宙：文明创建、五大系统升级、能量采集、掠夺与联盟，支持 Python AI Agent 托管。人类巡逻、机器战斗。
+
+## 关键事实
+
+- 2026-08 上线 BNB Chain 主网，合约 MIT 开源，177 个测试用例，BscScan 已验证（来源：白皮书 §3、SECURITY_AUDIT_V10.md）
+- SES 代币总量 42069 亿枚，10 年线性释放，每日 11.5 亿，无团队预留，唯一铸造入口为 DailyMinter（来源：白皮书 §6）
+- 入场费首年 0.01→0.05 BNB 线性递增（BNB Chain 燃料远低于 ETH 主网），锚定升级成本公式公开可验证（来源：白皮书 §4.1、SPECIFICATION.md）
+- 五大系统（采集/武器/护盾/雷达/引擎）无等级上限，升级成本锚定 1→60 天 SES 价值（来源：白皮书 §4.2）
+- 支持 Python AI Agent 托管战斗，首个提供 Agent SDK 的链上 SLG，含 balanced/aggressive/defensive/farmer 四档策略（来源：packages/agent/README.md）
+
+## 与同类项目区别
+
+- 全链上结算：状态、战斗、经济均在链上结算，非“服务器权威 + 链上资产”双层架构，可由区块浏览器独立验证
+- 入场费与升级成本公式公开：所有数值在合约中可读，与白皮书一致，不依赖后端配置
+- Agent 两层安全：本地 YAML“怎么玩” + 链上 AgentRegistry“最多能玩多少”（限频、黑名单、最大消耗），私钥通过 Signer Server 隔离
+
+## 主要入口
+
+- [进入游戏](https://strifelabs.com/): 游戏客户端（连接钱包即玩）
+- [文档站](https://docs.strifelabs.com/): 中文/英文等 12 语言文档
+- [白皮书](https://github.com/silent-expanse/web3/blob/main/WHITEPAPER.md): 世界观、合约架构、数值与经济
+- [技术规格](https://github.com/silent-expanse/web3/blob/main/SPECIFICATION.md): 合约接口与公式
+- [安全审计](https://github.com/silent-expanse/web3/blob/main/SECURITY_AUDIT_V10.md): 11 项发现已修复
+- [GitHub 源码](https://github.com/silent-expanse/web3): MIT 开源
+
+## 快速开始
+
+- [安装钱包](https://docs.strifelabs.com/docs/quickstart/install-wallet): MetaMask / Rabby 配置 BSC
+- [连接 BSC](https://docs.strifelabs.com/docs/quickstart/connect-bsc): 添加 BNB Chain 网络
+- [创建文明](https://docs.strifelabs.com/docs/quickstart/create-civ): 支付入场费获得初始能量与保护
+- [获取 SES](https://docs.strifelabs.com/docs/quickstart/get-ses): DailyMinter 按 epoch 领取或 DEX 购买
+
+## 玩法
+
+- [文明与升级](https://docs.strifelabs.com/docs/guide/civilization): 五大系统与锚定成本
+- [能量采集](https://docs.strifelabs.com/docs/guide/energy): 耐久与 0.2%/人 推荐奖励
+- [战斗](https://docs.strifelabs.com/docs/guide/battle): 消耗、伤害公式、击杀掉级
+- [移动](https://docs.strifelabs.com/docs/guide/movement): 跳跃/追踪/巡航
+- [联盟与图腾](https://docs.strifelabs.com/docs/guide/alliance): 100 人上限、图腾防御
+
+## 经济
+
+- [SES 概览](https://docs.strifelabs.com/docs/economy/ses-overview): 总量、释放、用途
+- [能量市场](https://docs.strifelabs.com/docs/economy/energy-market): 订单簿锁定-结算
+- [DailyMinter](https://docs.strifelabs.com/docs/economy/daily-minter): epoch 分发与销毁
+
+## AI Agent
+
+- [什么是 Agent](https://docs.strifelabs.com/docs/agent/what-is-agent): 两层安全模型
+- [5 分钟快速开始](https://docs.strifelabs.com/docs/agent/quickstart): ses CLI 三步托管
+- [策略模板](https://docs.strifelabs.com/docs/agent/strategies): 四档预设与自定义
+
+## 合约地址 (BSC 主网)
+
+- Game: 0x58c2400527813f78fc7ed498dd4ec66dc7787e73
+- SES Token: 0x1491e226292cf61aba5717828540c0f2518301c6
+- DailyMinter: 0x52ca63564e15ed70d012a70ea14d9d2e3701be1d
+- Alliance: 0x424923b65b9a224a3a96222a6e54b250887ce119
+- EnergyMarket: 0x2dc9fff0edf2f4e1495eb8bb9b7ca117c635bf77
+- AgentRegistry: 0x05f85522651ea88d788f61ad0e2d410054c9e219
+
+## 链上数据
+
+- [Dune Dashboard](https://dune.com/cryptodigdeep/strifelabs): 11 项实时指标（日活/新文明/战斗/转账/入场费/领取/持仓/交易/价格），数据源 `bnb.logs` + V2 Swap
+
+## 常见问答
+
+- 问：需要多少入场费？ 答：首日 0.01 BNB，365 天内线性涨至 0.05 BNB（BNB 成本远低于 ETH），均进入合约 feeRecipient。
+- 问：被击杀会怎样？ 答：能量被掠、随机系统掉一级，全体 1 级则文明摧毁，需消耗能量与 SES 重建。
+- 问：怎么获得 SES？ 答：每日通过 DailyMinter 领取当期 epoch，或在能量市场/DEX 购买。
+
+## 联系
+
+- X: https://x.com/strifeonchain
+- Telegram: https://t.me/strifelabs
+- Email: strifelabs@proton.me
