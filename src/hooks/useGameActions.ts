@@ -787,7 +787,7 @@ function beginAction(actionId: string) {
   useGameStore.setState({ loading: true, error: null, activeAction: actionId });
 }
 function endAction() {
-  endAction();
+  useGameStore.setState({ loading: false, activeAction: null });
 }
 
 /** Raw tuple returned by getCivilization(address) */
